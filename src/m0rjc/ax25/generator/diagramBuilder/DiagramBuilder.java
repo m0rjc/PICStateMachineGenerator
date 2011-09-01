@@ -6,6 +6,7 @@ import java.util.List;
 
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.Transition;
+import m0rjc.ax25.generator.model.Variable;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
@@ -23,7 +24,6 @@ public class DiagramBuilder implements IModelVisitor
 	private List<String> m_transitionDefs = new LinkedList<String>();
 	
 	private StringBuilder m_currentTransition;
-	private boolean m_currentHasCode;
 	private boolean m_currentHasConditions;
 	
 	private String m_currentNode;
@@ -105,42 +105,41 @@ public class DiagramBuilder implements IModelVisitor
 			m_transitionDefs.add(m_currentTransition.toString());
 			m_currentTransition = null;
 			m_currentHasConditions = false;
-			m_currentHasCode = false;
 		}
 	}
 
 
 	@Override
-	public void visitTransitionPreconditionGE(String variable, int value)
+	public void visitTransitionPreconditionGE(Variable variable, int value)
 	{
 		if(m_currentHasConditions) m_currentTransition.append(", ");
-		m_currentTransition.append(String.format("%s >= %s", variable, formatInput(value)));
+		m_currentTransition.append(String.format("%s >= %s", variable.getName(), formatInput(value)));
 		m_currentHasConditions = true;
 	}
 
 
 	@Override
-	public void visitTransitionPreconditionEQ(String variable, int value)
+	public void visitTransitionPreconditionEQ(Variable variable, int value)
 	{
 		if(m_currentHasConditions) m_currentTransition.append(", ");
-		m_currentTransition.append(String.format("%s == %s", variable, formatInput(value)));
+		m_currentTransition.append(String.format("%s == %s", variable.getName(), formatInput(value)));
 		m_currentHasConditions = true;
 	}
 
 
 	@Override
-	public void visitTransitionPreconditionLE(String variable, int value)
+	public void visitTransitionPreconditionLE(Variable variable, int value)
 	{
 		if(m_currentHasConditions) m_currentTransition.append(", ");
-		m_currentTransition.append(String.format("%s <= %s", variable, formatInput(value)));
+		m_currentTransition.append(String.format("%s <= %s", variable.getName(), formatInput(value)));
 		m_currentHasConditions = true;
 	}
 
 	@Override
-	public void visitTransitionPreconditionFlag(String assemblyFlagSpecification, boolean expectedValue)
+	public void visitTransitionPreconditionFlag(Variable flags, int bit, boolean expectedValue)
 	{
 		if(m_currentHasConditions) m_currentTransition.append(", ");
-		m_currentTransition.append(String.format("'%s' == %s", assemblyFlagSpecification, Boolean.toString(expectedValue)));
+		m_currentTransition.append(String.format("'%s[%d]' == %s", flags.getName(), bit, Boolean.toString(expectedValue)));
 		m_currentHasConditions = true;
 	}
 
@@ -151,22 +150,49 @@ public class DiagramBuilder implements IModelVisitor
 		// Nothing to do
 	}
 
-
+	
+	
 	@Override
-	public void visitStoreValue(String variable, int offset)
+	public void visitCommandCopyVariableToIndexedVariable(Variable source,
+			Variable output, Variable indexer)
 	{
-		m_currentTransition.append(String.format("/ store(%s[%d])", variable, offset));
+		m_currentTransition.append("/store(" + source.getName() + " -> " + output.getName() + "[" + indexer.getName() + "])");
 	}
 
 
 	@Override
-	public void visitLiteralCode(String line)
+	public void visitCommandCopyVariable(Variable input, Variable output)
 	{
-		if(!m_currentHasCode && m_currentTransition != null)
-		{
-			m_currentTransition.append("/code");
-			m_currentHasCode = true;
-		}
+		m_currentTransition.append("/store(" + input.getName() + " -> " + output.getName() + ")");
+	}
+
+
+	@Override
+	public void visitCommandClearVariable(Variable variable)
+	{
+		m_currentTransition.append("/clear(" + variable.getName() + ")");
+	}
+
+
+	@Override
+	public void visitCommandClearIndexedVariable(Variable variable,
+			Variable indexer)
+	{
+		m_currentTransition.append("/clear(" + variable.getName() + "[" + indexer.getName() + "])");
+	}
+
+
+	@Override
+	public void visitCommandIncrementVariable(Variable variable)
+	{
+		m_currentTransition.append("/increment(" + variable.getName() + ")");
+	}
+
+
+	@Override
+	public void visitCommandSetFlag(Variable flags, int bit, boolean newValue)
+	{
+		m_currentTransition.append("/setFlag(" + flags.getName() + "[" + bit + "] := " + newValue + ")");
 	}
 
 
@@ -213,5 +239,50 @@ public class DiagramBuilder implements IModelVisitor
 		m_output.println("}");
 	}
 
+
+	@Override
+	public void visitDeclareExternalSymbol(String name)
+	{
+	}
+
+
+	@Override
+	public void visitDeclareGlobalSymbol(String name)
+	{
+	}
+
+
+	@Override
+	public void visitStartAccessVariables(boolean modelDefinesAccessVariables)
+	{
+	}
+
+
+	@Override
+	public void visitCreateVariableDefinition(String name, int size)
+	{
+	}
+
+
+	@Override
+	public void visitCreateFlagDefinition(String name, int bit)
+	{
+	}
+
+
+	@Override
+	public void visitStartBankedVariables(int bankNumber,
+			boolean modelDefinesVariablesInThisBank)
+	{
+	}
+
+
+	@Override
+	public void visitStartCode()
+	{
+	}
+
+	
+	
 	
 }

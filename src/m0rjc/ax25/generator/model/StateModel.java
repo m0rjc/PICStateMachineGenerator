@@ -111,6 +111,20 @@ public class StateModel implements IModel
 	}
 
 	/**
+	 * Create a global variable in the Access area
+	 * @param name
+	 * @param size
+	 * @return
+	 */
+	public Variable createGlobalAccessVariable(String name, int size)
+	{
+		Variable v = createAccessVariable(name, size);
+		makeVariableGlobal(v);
+		return v;
+	}
+
+	
+	/**
 	 * Create a variable in paged memory.
 	 * The storage will be declared in the generated code and made GLOBAL.
 	 * @param page
@@ -156,7 +170,7 @@ public class StateModel implements IModel
 	/**
 	 * Register the existence of an externally defined variable.
 	 */
-	public void registerExternalVariable(Variable v)
+	public void registerExternalVariable(Variable v, boolean requiresExtern)
 	{
 		String name = v.getName();
 		if(m_variablesByName.containsKey(name))
@@ -164,7 +178,10 @@ public class StateModel implements IModel
 			throw new IllegalArgumentException("Variable name " + name + " already exists");			
 		}
 		m_variablesByName.put(name, v);
-		m_externSymbols.add(name);
+		if(requiresExtern)
+		{
+			m_externSymbols.add(name);
+		}
 	}
 
 	/**
@@ -255,8 +272,34 @@ public class StateModel implements IModel
 	 */
 	public void accept(IModelVisitor visitor)
 	{
+		for(String name : m_externSymbols)
+		{
+			visitor.visitDeclareExternalSymbol(name);
+		}
+
+		for(String name : m_globalSymbols)
+		{
+			visitor.visitDeclareGlobalSymbol(name);
+		}
+
+		visitor.visitStartAccessVariables(!m_accessBankVariables.isEmpty());
+		for(Variable v : m_accessBankVariables)
+		{
+			v.accept(visitor);
+		}
+		
+		// Deliberately very wrong so it will fail a test until I fix it
+		visitor.visitStartBankedVariables(10, !m_pagedVariables.isEmpty());
+		for(Variable v : m_pagedVariables)
+		{
+			v.accept(visitor);
+		}
+		
+		visitor.visitStartCode();
+		
 		// TODO: I think I'm going to have to encode variables specially
 		m_rootNode.accept(new HashSet<String>(), visitor);
 		visitor.finished();
 	}
+
 }

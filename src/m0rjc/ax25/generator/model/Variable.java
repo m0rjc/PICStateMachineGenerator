@@ -3,6 +3,8 @@ package m0rjc.ax25.generator.model;
 import java.util.ArrayList;
 import java.util.List;
 
+import m0rjc.ax25.generator.visitor.IModelVisitor;
+
 /**
  * A variable used or accessed by the state machine
  */
@@ -130,6 +132,21 @@ public class Variable
 		int result = m_flags.indexOf(name);
 		if(result < 0) throw new IllegalArgumentException("Flag " + name + " not defined for " + m_name);
 		return result;
+	}
+
+	/**
+	 * Define myself to the visitor
+	 * @param visitor
+	 */
+	void accept(IModelVisitor visitor)
+	{
+		visitor.visitCreateVariableDefinition(getName(), getSize());
+		int i = 0;
+		for(String flag : m_flags)
+		{
+			visitor.visitCreateFlagDefinition(flag, i);
+			i++;
+		}
 	}
 	
 }

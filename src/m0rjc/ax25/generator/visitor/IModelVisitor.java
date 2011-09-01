@@ -13,9 +13,54 @@ import m0rjc.ax25.generator.model.Variable;
 public interface IModelVisitor
 {
 	/**
+	 * Declare an external symbol
+	 * @param name
+	 */
+	void visitDeclareExternalSymbol(String name);
+
+	/**
+	 * Declare a global symbol - defined in this module to be exported
+	 * @param name
+	 */
+	void visitDeclareGlobalSymbol(String name);
+	
+	/**
+	 * Declare the start of access variable definitions
+	 */
+	void visitStartAccessVariables(boolean modelDefinesAccessVariables);
+	
+	/**
+	 * Create a variable definition
+	 * @param name
+	 * @param size
+	 */
+	void visitCreateVariableDefinition(String name, int size);
+
+	/**
+	 * Create a #define for a flag bit
+	 * @param name
+	 * @param bit
+	 */
+	void visitCreateFlagDefinition(String name, int bit);
+	
+	/**
+	 * Declare the start of banked variable definition
+	 * @param bankNumber
+	 */
+	void visitStartBankedVariables(int bankNumber, boolean modelDefinesVariablesInThisBank);
+	
+	/**
+	 * Declare the start of code.
+	 * The builder may wish to output any boilerplate code here.
+	 */
+	void visitStartCode();
+	
+	/**
 	 * Start a Node.
 	 * The Node will be started, all its transitions visited, then the node ended before any other
 	 * nodes are visited.
+	 * 
+	 * The first node to be started is the root node.
 	 * @param node
 	 */
 	void startNode(Node node);
@@ -69,6 +114,4 @@ public interface IModelVisitor
 	 * End of visiting
 	 */
 	void finished();
-
-
 }

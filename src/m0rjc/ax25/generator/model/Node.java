@@ -139,6 +139,12 @@ public class Node implements INode
 				VariableValuePrecondition.createLE(input, '9'));
 		return addInputClassSequence(p, min, max, storage);
 	}
+
+	/** Add numbers but do not store the result */
+	public Node addNumbers(int min, int max) throws Exception
+	{
+		return addNumbers(min,max,null);
+	}
 	
 	/**
 	 * Create node or nodes to capture based on the given condition
@@ -305,6 +311,4 @@ public class Node implements INode
 	{
 		return m_entryCode;
 	}
-
-	
 }

@@ -19,29 +19,40 @@ public class GenerateGpsStateModel
 {
 	private static final int STATE_VARIABLE_PAGE = 2;
 	
-	private static final String VARIABLE_GPS_TIME = "gpsTime";
-	private static final String VARIABLE_GPS_QUALITY = "gpsQuality";
-	private static final String VARIABLE_GPS_LONGITUDE_HUNDREDTHS = "gpsLongitudeHundredths";
-	private static final String VARIABLE_GPS_LONGITUDE_MIN = "gpsLongitudeMin";
-	private static final String VARIABLE_GPS_LONGITUDE_DEG = "gpsLongitudeDeg";
-	private static final String VARIABLE_GPS_LATITUDE_HUNDREDTHS = "gpsLatitudeHundredths";
-	private static final String VARIABLE_GPS_LATITUDE_MIN = "gpsLatitudeMin";
-	private static final String VARIABLE_GPS_LATITUDE_DEG = "gpsLatitudeDeg";
+	/** This can only be read once per input character. It is a FIFO */
+	public static final String SFR_EUSART_RECEIVE = "RCREG";
+	
+	public static final String VARIABLE_INPUT = "gpsInput";
+	public static final String VARIABLE_GPS_TIME = "gpsTime";
+	public static final String VARIABLE_GPS_QUALITY = "gpsQuality";
+	public static final String VARIABLE_GPS_LONGITUDE_HUNDREDTHS = "gpsLongitudeHundredths";
+	public static final String VARIABLE_GPS_LONGITUDE_MIN = "gpsLongitudeMin";
+	public static final String VARIABLE_GPS_LONGITUDE_DEG = "gpsLongitudeDeg";
+	public static final String VARIABLE_GPS_LATITUDE_HUNDREDTHS = "gpsLatitudeHundredths";
+	public static final String VARIABLE_GPS_LATITUDE_MIN = "gpsLatitudeMin";
+	public static final String VARIABLE_GPS_LATITUDE_DEG = "gpsLatitudeDeg";
 
-	private static final String VARIABLE_GPS_FLAGS = "gpsFlags";
-	private static final String GPS_FLAG_GPS_NEW_TIME = "FLAG_GPS_NEW_TIME";
-	private static final String GPS_FLAG_GPS_NEW_QUALITY = "FLAG_GPS_NEW_QUALITY";
-	private static final String GPS_FLAG_GPS_NEW_POSITION = "FLAG_GPS_NEW_POSITION";
-	private static final String GPS_FLAG_GPS_EAST = "FLAG_GPS_EAST";
-	private static final String GPS_FLAG_GPS_NORTH = "FLAG_GPS_NORTH";
+	public static final String VARIABLE_GPS_FLAGS = "gpsFlags";
+	public static final String GPS_FLAG_GPS_NEW_TIME = "FLAG_GPS_NEW_TIME";
+	public static final String GPS_FLAG_GPS_NEW_QUALITY = "FLAG_GPS_NEW_QUALITY";
+	public static final String GPS_FLAG_GPS_NEW_POSITION = "FLAG_GPS_NEW_POSITION";
+	public static final String GPS_FLAG_GPS_EAST = "FLAG_GPS_EAST";
+	public static final String GPS_FLAG_GPS_NORTH = "FLAG_GPS_NORTH";
 	
 	private static final String STATE_READ_TIME_HHMMSS = "ReadTimeHHMMSS";
 	
 	public static void main(String[] args) throws Exception
 	{
-		StateModel model = new StateModel("gps");
-		model.setInputVariable(Variable.accessVariable("USART"));
+		StateModel model = buildmodel();
+		
+		writeGraphviz(model);
+	}
 
+	public static StateModel buildmodel() throws Exception
+	{
+		StateModel model = new StateModel("gps");
+
+		model.setInputVariable(model.createGlobalAccessVariable(VARIABLE_INPUT, 1));
 		model.createGlobalPagedVariable(STATE_VARIABLE_PAGE, VARIABLE_GPS_TIME, 6);
 		model.createGlobalPagedVariable(STATE_VARIABLE_PAGE, VARIABLE_GPS_QUALITY, 1);
 		model.createGlobalPagedVariable(STATE_VARIABLE_PAGE, VARIABLE_GPS_LONGITUDE_DEG, 3);
@@ -63,12 +74,8 @@ public class GenerateGpsStateModel
 		Node dollar = initial.addString("$");
 		
 		buildReadTimeHHMMSS(model);
-		buildGpGLL(model, dollar);
-		buildGpZDA(model, dollar);
 		buildGpGGA(model, dollar);
-		
-		writeGraphviz(model);
-		
+		return model;
 	}
 
 	/**
@@ -143,38 +150,7 @@ public class GenerateGpsStateModel
 						.goTo(model.getInitialState()));
 		}
 	
-	/**
-	 * Define the state model for GPZDA - Date and time
-	 * @param model
-	 * @param dollar
-	 * @throws Exception 
-	 */
-	private static void buildGpZDA(StateModel model, Node dollar) throws Exception
-	{
-		Variable input = model.getInputVariable();
-		
-		dollar
-			.addString("GPZDA")
-			.addChoices(new Transition().whenEqual(input, ',').goTo(STATE_READ_TIME_HHMMSS));
-	}
 
-	/**
-	 * Define the state model for GPGLL - Position
-	 * @param model
-	 * @param dollar
-	 * @throws Exception
-	 */
-	private static void buildGpGLL(StateModel model, Node dollar)
-		throws Exception
-	{	
-		Node gpgll = dollar.addString("GPGLL,");
-		Node afterLatLong = createMachineForLatLong(model, gpgll, "GpGll");
-		
-		afterLatLong
-			.addChoices(
-				new SingleValueTransition(',', STATE_READ_TIME_HHMMSS),
-				new SingleValueTransition('$', dollar));
-	}
 
 	/**
 	 * Create a state machine to read Lat,Long
@@ -190,37 +166,42 @@ public class GenerateGpsStateModel
 		String stateNameReadLongitude = namePrefix + "ReadLong";
 		String stateNameComplete = namePrefix + "DoneLatLong";
 		
-		entryNode.addGuardCheckFlag(GPS_FLAG_GPS_NEW_POSITION, false)
-			.addNumbers(2,VARIABLE_GPS_LATITUDE_DEG)
-			.addNumbers(2,VARIABLE_GPS_LATITUDE_MIN)
+		Variable input = model.getInputVariable();
+		Variable flags = model.getVariable(VARIABLE_GPS_FLAGS);
+		
+		entryNode.addEntryCondition(Precondition.checkFlag(flags, GPS_FLAG_GPS_NEW_POSITION, false))
+			.addNumbers(2,2,model.getVariable(VARIABLE_GPS_LATITUDE_DEG))
+			.addNumbers(2,2,model.getVariable(VARIABLE_GPS_LATITUDE_MIN))
 			.addString(".")
-			.addNumbers(2,VARIABLE_GPS_LATITUDE_HUNDREDTHS)
+			.addNumbers(2,2,model.getVariable(VARIABLE_GPS_LATITUDE_HUNDREDTHS))
+			.addNumbers(0,2)
 			.addString(",")
 			.addChoices(
-				new SingleValueTransition('S', 
-					new Asm("BCF " + GPS_FLAG_GPS_NORTH),
-					stateNameReadLongitude),
-				new SingleValueTransition('N', 
-					new Asm("BSF " + GPS_FLAG_GPS_NORTH),
-					stateNameReadLongitude));
+				new Transition().whenEqual(input,'S')
+						.doCommand(Command.setFlag(flags, GPS_FLAG_GPS_NORTH, false))
+						.goTo(stateNameReadLongitude),
+				new Transition().whenEqual(input, 'N')
+						.doCommand(Command.setFlag(flags, GPS_FLAG_GPS_NORTH, true))
+						.goTo(stateNameReadLongitude));
 		
 		model.createNamedNode(stateNameReadLongitude)
-			.addNumbers(3,VARIABLE_GPS_LONGITUDE_DEG)
-			.addNumbers(2,VARIABLE_GPS_LONGITUDE_MIN)
+			.addString(",")
+			.addNumbers(3,3,model.getVariable(VARIABLE_GPS_LONGITUDE_DEG))
+			.addNumbers(2,2,model.getVariable(VARIABLE_GPS_LONGITUDE_MIN))
 			.addString(".")
-			.addNumbers(2,VARIABLE_GPS_LONGITUDE_HUNDREDTHS)
+			.addNumbers(2,2,model.getVariable(VARIABLE_GPS_LONGITUDE_HUNDREDTHS))
+			.addNumbers(0,2)
 			.addString(",")
 			.addChoices(
-				new SingleValueTransition('E', 
-					new Asm("BSF " + GPS_FLAG_GPS_EAST),
-					stateNameComplete),
-				new SingleValueTransition('W', 
-					new Asm("BCF " + GPS_FLAG_GPS_EAST),
-					stateNameComplete)
-					);
+					new Transition().whenEqual(input,'E')
+						.doCommand(Command.setFlag(flags, GPS_FLAG_GPS_EAST, true))
+						.goTo(stateNameComplete),
+					new Transition().whenEqual(input, 'W')
+						.doCommand(Command.setFlag(flags, GPS_FLAG_GPS_EAST, false))
+						.goTo(stateNameComplete));
 		
 		Node afterLatLong = model.createNamedNode(stateNameComplete);
-		afterLatLong.addEntryCode("BSF " + GPS_FLAG_GPS_NEW_POSITION);
+		afterLatLong.addEntryCommand(Command.setFlag(flags, GPS_FLAG_GPS_NEW_POSITION, true));
 		return afterLatLong;
 	}
 	
@@ -231,9 +212,11 @@ public class GenerateGpsStateModel
 	 */
 	private static void buildReadTimeHHMMSS(StateModel model) throws Exception
 	{
+		Variable flags = model.getVariable(VARIABLE_GPS_FLAGS);
+		
 		model.createNamedNode(STATE_READ_TIME_HHMMSS)
-			.addGuardCheckFlag(GPS_FLAG_GPS_NEW_TIME, false)
-			.addNumbers(6,VARIABLE_GPS_TIME)
-			.addEntryCode("BSF " + GPS_FLAG_GPS_NEW_TIME);
+			.addEntryCondition(Precondition.checkFlag(flags, GPS_FLAG_GPS_NEW_TIME, false))
+			.addNumbers(6,6,model.getVariable(VARIABLE_GPS_TIME))
+			.addEntryCommand(Command.setFlag(flags, GPS_FLAG_GPS_NEW_TIME, true));
 	}
 }
