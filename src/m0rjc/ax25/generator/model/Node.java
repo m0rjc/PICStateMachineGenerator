@@ -99,19 +99,38 @@ public class Node implements INode
 	}
 
 	/**
-	 * Create an empty transition to a new node
+	 * Create an empty transition to a new node.
+	 * Add it to the transition list.
 	 */
 	private Transition createEmptyTransitionToNewNode()
 	{
-		return new Transition(m_model.createNode());
+		Transition transition = new Transition(m_model.createNode());
+		m_transitions.add(transition);
+		return transition;
 	}
 	
 	/**
-	 * Create an empty transition to this node
+	 * Create an empty transition to the given node
+	 * @param target
+	 * @return
+	 */
+	private Transition createEmptyTransitionToNode(Node target)
+	{
+		Transition transition = new Transition(target);
+		m_transitions.add(transition);
+		return transition;
+	}
+
+	
+	/**
+	 * Create an empty transition to this node.
+	 * Add it to the transition list.
 	 */
 	private Transition createSelfTransition()
 	{
-		return new Transition(this);
+		Transition transition = new Transition(this);
+		m_transitions.add(transition);
+		return transition;
 	}
 	
 	/**
@@ -123,6 +142,37 @@ public class Node implements INode
 		return this;
 	}
 
+	/**
+	 * Skip to the next , or if we see a $ go to the "I've just read $" node.
+	 * @param dollar
+	 * @return
+	 */
+	public Node skipTo(Node dollar)
+	{
+		Node exitNode = createEmptyTransitionToNewNode()
+			.whenEqual(m_model.getInputVariable(), ',')
+			.getNode();
+		
+		if(dollar != null)
+		{
+			createEmptyTransitionToNode(dollar)
+				.whenEqual(m_model.getInputVariable(), '$');
+		}
+		
+		createSelfTransition();
+		return exitNode;
+	}
+	
+	/**
+	 * Keep evaluating the given transitions until one comes up.
+	 * @param transitions
+	 */
+	public void skipTo(Transition... transitions)
+	{
+		addChoices(transitions);
+		createSelfTransition();
+	}
+	
 	/**
 	 * Create node or nodes to capture numbers.
 	 * 
@@ -169,6 +219,10 @@ public class Node implements INode
 			if(requiresNullTerminatedString)
 				storeCommand.add(Command.clearIndexedValue(storage, counter));
 		}
+		else
+		{
+			storeCommand.add(Command.incrementValue(counter));
+		}
 		
 		assert storage == null || storage.getSize() >= (requiresNullTerminatedString ? max+1 : max);
 		
@@ -195,6 +249,7 @@ public class Node implements INode
 			Node numbersNode = createEmptyTransitionToNewNode()
 							.when(condition)
 							.when(VariableValuePrecondition.createLE(counter, min - 2))
+							.doCommand(storeCommand)
 							.getNode();
 
 			// Subsequent numbers less than min keep us in this state

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Simulation of the state engine with methods to check the internal state.
@@ -50,6 +51,7 @@ public class Simulation
 	
 	public void setCurrentState(String name) throws SimulationException
 	{
+		Log.finest("Simulation entering state: " + name);
 		m_currentState = m_states.get(name);
 		if(m_currentState == null)
 		{
@@ -77,6 +79,7 @@ public class Simulation
 	/** Feed the given byte into the state engine */
 	private void acceptInput(byte b) throws SimulationException
 	{
+		Log.fine("Simulation setting input: " + Log.formatByte(b));
 		m_inputVariable.setValue(b);
 		m_currentState.step();
 	}
