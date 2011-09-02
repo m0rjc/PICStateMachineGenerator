@@ -1,5 +1,8 @@
 package m0rjc.ax25.generator.unittest;
 
+import java.io.InputStream;
+import java.util.logging.LogManager;
+
 import m0rjc.ax25.generator.GenerateGpsStateModel;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.simulatorBuilder.Simulation;
@@ -7,6 +10,7 @@ import m0rjc.ax25.generator.simulatorBuilder.SimulationException;
 import m0rjc.ax25.generator.simulatorBuilder.SimulatorBuilder;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -15,6 +19,17 @@ import org.junit.runners.JUnit4;
 public class UnitTestGpsGeneratedModel
 {
 	private Simulation m_simulation;
+	
+	@BeforeClass
+	public static void systemSetup() throws Exception
+	{
+		// Set up logging
+		InputStream in = UnitTestGpsGeneratedModel.class.getResourceAsStream("logging.properties");
+		if(in != null)
+		{
+			LogManager.getLogManager().readConfiguration(in);
+		}
+	}
 	
 	@Before
 	public void testSetup() throws Exception
@@ -70,7 +85,7 @@ public class UnitTestGpsGeneratedModel
 	{
 		// Example taken from the datasheet for my module
 		m_simulation.acceptInput("$GPGGA,060932.448,2447.0959garbledgarbledgarbled");
-		m_simulation.acceptInput("$GPGGA,184512.448,1234.5678,N,06012.9682,E,1,08,1.1,108.7,M,,,,0000*0E\n\r");
+		m_simulation.acceptInput("$GPGGA,060934.448,2447.0959,S,12100.5204,W,1,08,1.1,108.7,M,,,,0000*0E\n\r");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_TIME, "060932");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_DEG, "24");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_MIN, "47");

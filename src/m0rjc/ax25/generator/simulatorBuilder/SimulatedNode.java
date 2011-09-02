@@ -24,11 +24,15 @@ class SimulatedNode
 	 */
 	void step() throws SimulationException
 	{
+		Log.fine(String.format("Node %s performing step", m_name));
+		
 		for(SimulatedTransition t : m_transitions)
 		{
+			Log.finest(String.format("Node %s starting transition", m_name));
 			ActionResult result;
 			try {
 				result = t.run();
+				Log.finer(String.format("Node %s transition returned %s", m_name, result.name()));
 			} catch (SimulationException e) {
 				throw new SimulationException("Exception in Node " + m_name, e);
 			}
@@ -40,6 +44,8 @@ class SimulatedNode
 				throw new SimulationException("Node " + m_name + " transition fell through");
 			case RETURN_FROM_STATE_ENGINE:
 				return;
+			case NEXT_TRANSITION:
+				Log.fine("  Next transition");
 			}
 		}
 		

@@ -32,4 +32,15 @@ public abstract class Precondition
 	{
 		return new FlagCheckPrecondition(holdingVariable, holdingVariable.getBit(flagName), expectedValue);
 	}
+
+	/**
+	 * Convenience method to create an Equals precondition
+	 * @param inputVariable
+	 * @param c
+	 * @return
+	 */
+	public static Precondition equals(Variable inputVariable, int c)
+	{
+		return VariableValuePrecondition.createEQ(inputVariable, c);
+	}
 }

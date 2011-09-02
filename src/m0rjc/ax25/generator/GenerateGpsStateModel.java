@@ -101,7 +101,6 @@ public class GenerateGpsStateModel
 	{
 		final String STATE_GPGGA_READ_TIME = "GpGaaReadTime";
 		final String STATE_GPGGA_SKIP_TIME = "GpGaaSkipTime";
-		final String STATE_GPGGA_SKIP_CENTISECONDS = "GpGaaSkipCentiSec";
 		final String STATE_GPGGA_LATITUDE = "GpGaaLatitude";
 		
 		Variable input = model.getInputVariable();
@@ -117,24 +116,19 @@ public class GenerateGpsStateModel
 		model.createNamedNode(STATE_GPGGA_READ_TIME)
 			.addEntryCondition(Precondition.checkFlag(flags, GPS_FLAG_GPS_NEW_TIME, false))
 			.addNumbers(6, 6, model.getVariable(VARIABLE_GPS_TIME))
-			.addChoices(
-				new Transition().whenEqual(input, ',').goTo(STATE_GPGGA_LATITUDE), 
-				new Transition().whenEqual(input, '.').goTo(STATE_GPGGA_SKIP_CENTISECONDS));
-		
+			.addEntryCommand(Command.setFlag(flags, GPS_FLAG_GPS_NEW_TIME, true))
+			.skipTo(
+				new Transition().whenEqual(input, '$').goTo(dollar),
+				new Transition().whenEqual(input, ',').goTo(STATE_GPGGA_LATITUDE));
+				
 		// Skip over HHMMSS.ss
 		model.createNamedNode(STATE_GPGGA_SKIP_TIME)
 			.addEntryCondition(new FlagCheckPrecondition(flags, flags.getBit(GPS_FLAG_GPS_NEW_TIME), true))
 			.addNumbers(6)
-			.addChoices(
-					new Transition().whenEqual(input, ',').goTo(STATE_GPGGA_LATITUDE), 
-					new Transition().whenEqual(input, '.').goTo(STATE_GPGGA_SKIP_CENTISECONDS));
-			
-		// Skip over ss,
-		model.createNamedNode(STATE_GPGGA_SKIP_CENTISECONDS)
-			.addNumbers(2)
-			.addChoices(
-				new Transition().whenEqual(input, ',').goTo(STATE_GPGGA_LATITUDE)); 
-		
+			.skipTo(
+				new Transition().whenEqual(input, '$').goTo(dollar),
+				new Transition().whenEqual(input, ',').goTo(STATE_GPGGA_LATITUDE));
+					
 		// Read Latitude and longitude
 		Node latLong = model.createNamedNode(STATE_GPGGA_LATITUDE);
 		Node afterLatLong = createMachineForLatLong(model, latLong, "GpGaa");

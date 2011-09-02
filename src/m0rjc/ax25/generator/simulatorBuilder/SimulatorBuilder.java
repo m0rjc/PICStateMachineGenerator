@@ -124,7 +124,7 @@ public class SimulatorBuilder implements IModelVisitor
 	}
 	
 	/** Encode a transition precondition for Greater or Equals. Variable may need substitution */
-	public void visitTransitionPreconditionGE(Variable variable, final int value)
+	public void visitTransitionPreconditionGE(Variable variable, final int expectedValue)
 	{
 		final String name = variable.getName();
 		final Simulation simulation = m_simulation;
@@ -133,7 +133,11 @@ public class SimulatorBuilder implements IModelVisitor
 			@Override
 			public ActionResult run() throws SimulationException
 			{
-				if(simulation.getVariable(name).getValue() >= value)
+				byte actualValue = simulation.getVariable(name).getValue();
+				Log.fine(String.format("    Condition: %s >= %s, value=%s",
+							name, Log.formatByte((byte)expectedValue), Log.formatByte(actualValue)));
+				
+				if(actualValue >= expectedValue)
 					return ActionResult.CONTINUE_TO_NEXT_ACTION;
 				return ActionResult.NEXT_TRANSITION;
 			}
@@ -141,7 +145,7 @@ public class SimulatorBuilder implements IModelVisitor
 	}
 
 	/** Encode a transition precondition for Equals */
-	public void visitTransitionPreconditionEQ(Variable variable, final int value)
+	public void visitTransitionPreconditionEQ(Variable variable, final int expectedValue)
 	{
 		final String name = variable.getName();
 		final Simulation simulation = m_simulation;
@@ -150,7 +154,11 @@ public class SimulatorBuilder implements IModelVisitor
 			@Override
 			public ActionResult run() throws SimulationException
 			{
-				if(simulation.getVariable(name).getValue() == value)
+				byte actualValue = simulation.getVariable(name).getValue();
+				Log.fine(String.format("    Condition: %s == %s, value=%s",
+					name, Log.formatByte((byte)expectedValue), Log.formatByte(actualValue)));
+				
+				if(actualValue == expectedValue)
 					return ActionResult.CONTINUE_TO_NEXT_ACTION;
 				return ActionResult.NEXT_TRANSITION;
 			}
@@ -158,7 +166,7 @@ public class SimulatorBuilder implements IModelVisitor
 	}
 	
 	/** Encode a transition precondition for Less than or Equals */
-	public void visitTransitionPreconditionLE(Variable variable, final int value)
+	public void visitTransitionPreconditionLE(Variable variable, final int expectedValue)
 	{
 		final String name = variable.getName();
 		final Simulation simulation = m_simulation;
@@ -167,7 +175,11 @@ public class SimulatorBuilder implements IModelVisitor
 			@Override
 			public ActionResult run() throws SimulationException
 			{
-				if(simulation.getVariable(name).getValue() <= value)
+				byte actualValue = simulation.getVariable(name).getValue();
+				Log.fine(String.format("    Condition: %s <= %s, value=%s",
+					name, Log.formatByte((byte)expectedValue), Log.formatByte(actualValue)));
+
+				if(simulation.getVariable(name).getValue() <= expectedValue)
 					return ActionResult.CONTINUE_TO_NEXT_ACTION;
 				return ActionResult.NEXT_TRANSITION;
 			}
@@ -184,7 +196,10 @@ public class SimulatorBuilder implements IModelVisitor
 			@Override
 			public ActionResult run() throws SimulationException
 			{
-				if(simulation.getVariable(name).getBit(bit) == expectedValue)
+				boolean actualValue = simulation.getVariable(name).getBit(bit);
+				Log.fine(String.format("    Condition: %s:%d = %b. value=%b", name, bit, expectedValue, actualValue));
+				
+				if(actualValue == expectedValue)
 					return ActionResult.CONTINUE_TO_NEXT_ACTION;
 				return ActionResult.NEXT_TRANSITION;
 			}
@@ -207,7 +222,11 @@ public class SimulatorBuilder implements IModelVisitor
 				SimulatedVariable outVar = simulation.getVariable(outputName);
 				SimulatedVariable indexVar = simulation.getVariable(indexerName);
 				SimulatedVariable sourceVar = simulation.getVariable(sourceName);
-				outVar.setValue(indexVar, sourceVar.getValue());
+				
+				byte value = sourceVar.getValue();
+				Log.fine(String.format("    Command: %s[%s] := %s. index=%d, value=%s",
+					outputName, indexerName, sourceName, indexVar.getValue(), Log.formatByte(value))); 
+				outVar.setValue(indexVar, value);
 				return ActionResult.CONTINUE_TO_NEXT_ACTION;
 			}
 		});
@@ -227,7 +246,11 @@ public class SimulatorBuilder implements IModelVisitor
 			{
 				SimulatedVariable outVar = simulation.getVariable(outputName);
 				SimulatedVariable sourceVar = simulation.getVariable(sourceName);
-				outVar.setValue(sourceVar.getValue());
+				
+				byte value = sourceVar.getValue();
+				Log.fine(String.format("    Command: %s := %s. value=%s", outputName, sourceName, Log.formatByte(value)));
+				
+				outVar.setValue(value);
 				return ActionResult.CONTINUE_TO_NEXT_ACTION;
 			}
 		});
@@ -246,6 +269,7 @@ public class SimulatorBuilder implements IModelVisitor
 			public ActionResult run() throws SimulationException
 			{
 				SimulatedVariable v = simulation.getVariable(variableName);
+				Log.fine(String.format("    Command: CLRF %s (%d bytes)", variableName, size));
 				for(int i = 0; i < size; i++)
 				{
 					v.setValue(i,(byte)0);
@@ -268,6 +292,8 @@ public class SimulatorBuilder implements IModelVisitor
 			{
 				SimulatedVariable v = simulation.getVariable(variableName);
 				SimulatedVariable i = simulation.getVariable(indexerName);
+				Log.fine(String.format("    Command: %s[%s] := 0. index=%d", variableName, indexerName, i.getValue()));
+
 				v.setValue(i,(byte)0);
 				return ActionResult.CONTINUE_TO_NEXT_ACTION;
 			}
@@ -287,7 +313,9 @@ public class SimulatorBuilder implements IModelVisitor
 			public ActionResult run() throws SimulationException
 			{
 				SimulatedVariable v = simulation.getVariable(variableName);
-				v.setValue((byte)(v.getValue() + 1));
+				byte newValue = (byte)(v.getValue() + 1);
+				Log.fine(String.format("    Command: %s++. newValue=%d", variableName, newValue));
+				v.setValue(newValue);
 				return ActionResult.CONTINUE_TO_NEXT_ACTION;
 			}
 		});		
@@ -304,6 +332,7 @@ public class SimulatorBuilder implements IModelVisitor
 			public ActionResult run() throws SimulationException
 			{
 				SimulatedVariable v = simulation.getVariable(variableName);
+				Log.fine(String.format("    Command: %s:%d = %b", variableName, bit, newValue));
 				v.setBit(bit, newValue);
 				return ActionResult.CONTINUE_TO_NEXT_ACTION;
 			}
@@ -319,6 +348,7 @@ public class SimulatorBuilder implements IModelVisitor
 			@Override
 			public ActionResult run() throws SimulationException
 			{
+				Log.fine(String.format("    Command: GOTO %s", stateName));
 				simulation.setCurrentState(stateName);
 				return ActionResult.RETURN_FROM_STATE_ENGINE;
 			}
@@ -333,7 +363,18 @@ public class SimulatorBuilder implements IModelVisitor
 	{
 		// Encode the fallback case
 		visitTransition(null);
-		visitTransitionGoToNode(m_rootNodeName);
+		
+		final Simulation simulation = m_simulation;
+		final String stateName = m_rootNodeName;
+		m_currentTransition.addAction(new SimulatedAction() {
+			@Override
+			public ActionResult run() throws SimulationException
+			{
+				Log.info(String.format("     Unexpected Input: Falling back to %s", stateName));
+				simulation.setCurrentState(stateName);
+				return ActionResult.RETURN_FROM_STATE_ENGINE;
+			}
+		});		
 	}
 
 	/**
@@ -341,6 +382,6 @@ public class SimulatorBuilder implements IModelVisitor
 	 */
 	public void finished()
 	{
-		// Nothing to do.
+		Log.info("Simulator initialised for test");
 	}
 }
