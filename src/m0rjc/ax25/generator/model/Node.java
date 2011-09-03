@@ -211,18 +211,7 @@ public class Node implements INode
 		Variable input = m_model.getInputVariable();
 		boolean requiresNullTerminatedString = max > min;
 		
-		CompositeCommand storeCommand = new CompositeCommand();
-		if(storage != null)
-		{
-			storeCommand.add(Command.storeValueIndex(input, storage, counter))
-					    .add(Command.incrementValue(counter));
-			if(requiresNullTerminatedString)
-				storeCommand.add(Command.clearIndexedValue(storage, counter));
-		}
-		else
-		{
-			storeCommand.add(Command.incrementValue(counter));
-		}
+		CompositeCommand storeCommand = buildStoreCommand(input, storage, counter, requiresNullTerminatedString);
 		
 		assert storage == null || storage.getSize() >= (requiresNullTerminatedString ? max+1 : max);
 		
@@ -240,6 +229,24 @@ public class Node implements INode
 			// Any numbers allow us to exit
 			exitNode = createEmptyTransitionToNewNode()
 				.when(condition)
+				.doCommand(storeCommand)
+				.getNode();
+		}
+		else if(min == max && m_transitions.isEmpty())
+		{
+			// We can stay on the start node until we hit max. It's a generalisation
+			// that fails if there are non-number transitions, but in my examples I don't
+			// do that so will take advantage of optimising out one state.
+			createSelfTransition()
+				.ignoreTargetNodeEntry()
+				.when(condition)
+				.when(Precondition.lessThan(counter, max - 1))
+				.doCommand(storeCommand)
+				.getNode();
+			
+			exitNode = createEmptyTransitionToNewNode()
+				.when(condition)
+				.when(Precondition.equals(counter, max - 1))
 				.doCommand(storeCommand)
 				.getNode();
 		}
@@ -278,6 +285,25 @@ public class Node implements INode
 		}
 		
 		return exitNode;
+	}
+
+	private CompositeCommand buildStoreCommand(Variable input,
+			Variable storage, Variable counter,
+			boolean requiresNullTerminatedString)
+	{
+		CompositeCommand storeCommand = new CompositeCommand();
+		if(storage != null)
+		{
+			storeCommand.add(Command.storeValueIndex(input, storage, counter))
+					    .add(Command.incrementValue(counter));
+			if(requiresNullTerminatedString)
+				storeCommand.add(Command.clearIndexedValue(storage, counter));
+		}
+		else
+		{
+			storeCommand.add(Command.incrementValue(counter));
+		}
+		return storeCommand;
 	}
 	
 	/**

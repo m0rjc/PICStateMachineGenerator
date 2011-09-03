@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 /**
  * Simulation of the state engine with methods to check the internal state.
@@ -137,6 +136,11 @@ public class Simulation
 	public void setCurrentState(SimulatedNode node)
 	{
 		m_currentState = node;
+	}
+
+	public int getStateCount()
+	{
+		return m_states.size();
 	}
 
 

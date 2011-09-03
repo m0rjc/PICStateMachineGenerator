@@ -21,6 +21,8 @@ public class Transition
 	private List<Precondition> m_preconditions = new ArrayList<Precondition>();
 	/** Additional commands to perform on transition */
 	private List<Command> m_transitionCommands = new ArrayList<Command>();
+	/** Ignore entry conditions and actions on the target node */
+	private boolean m_ignoreTargetNodeEntry;
 	
 	/**
 	 * Create an undefined transition.
@@ -148,9 +150,12 @@ public class Transition
 		}
 		
 		Node node = getNode(model);		
-		for(Precondition p : node.getEntryPreconditions())
+		if(!m_ignoreTargetNodeEntry)
 		{
-			p.accept(visitor);
+			for(Precondition p : node.getEntryPreconditions())
+			{
+				p.accept(visitor);
+			}
 		}
 
 		for(Command c : m_transitionCommands)
@@ -158,9 +163,12 @@ public class Transition
 			c.accept(visitor);
 		}
 		
-		for(Command c : node.getEntryCommands())
+		if(!m_ignoreTargetNodeEntry)
 		{
-			c.accept(visitor);
+			for(Command c : node.getEntryCommands())
+			{
+				c.accept(visitor);
+			}
 		}
 
 		if(node.hasTransitions())
@@ -186,6 +194,16 @@ public class Transition
 			if(!p.accepts(variable, value)) return false;
 		}
 		return true;
+	}
+
+	/**
+	 * Set to ignore entry conditions and actions on the target node.
+	 * @return
+	 */
+	public Transition ignoreTargetNodeEntry()
+	{
+		m_ignoreTargetNodeEntry = true;
+		return this;
 	}
 	
 }

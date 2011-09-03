@@ -43,4 +43,15 @@ public abstract class Precondition
 	{
 		return VariableValuePrecondition.createEQ(inputVariable, c);
 	}
+
+	/**
+	 * Convenience method to create a Less Than precondition
+	 * @param counter
+	 * @param i
+	 * @return
+	 */
+	public static Precondition lessThan(Variable variable, int value)
+	{
+		return VariableValuePrecondition.createLE(variable, value - 1);
+	}
 }
