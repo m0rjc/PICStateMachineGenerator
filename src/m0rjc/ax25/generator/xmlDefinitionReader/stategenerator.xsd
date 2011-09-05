@@ -401,6 +401,7 @@
 				</element>
 			</choice>
 		</sequence>
+		<attribute name="description" type="string" use="optional"></attribute>
 	</complexType>
 
 	<simpleType name="ScriptLiteral">
@@ -473,8 +474,11 @@
 			<documentation>Define a unit test for the model</documentation>
 		</annotation>
 		<sequence>
-			<element name="Input" type="string"></element>
-			<element name="Assert" type="state:UnitTestAssertionList"></element>
+			<element name="Description" type="string" minOccurs="0"/>
+			<choice minOccurs="0" maxOccurs="unbounded">
+				<element name="Input" type="string"></element>
+				<element name="Assert" type="state:UnitTestAssertionList"></element>
+			</choice>
 		</sequence>
 	</complexType>
 
