@@ -4,7 +4,9 @@
 	xmlns:state="http://net.raynet-uk.m0rjc.picprojects/stategenerator"
 	elementFormDefault="qualified">
 
-	<element name="StateGeneratorRun" type="state:StateGeneratorRun">
+    <annotation>
+    	<documentation></documentation></annotation>
+    <element name="StateGeneratorRun" type="state:StateGeneratorRun">
 		<annotation>
 			<documentation>Define a run of the state generator</documentation>
 		</annotation>
@@ -38,6 +40,11 @@
 			<annotation>
 				<documentation>The name of the root/starting node in the model
 				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="inputVariable" type="string" use="required">
+			<annotation>
+				<documentation>The name of the input variable in the model</documentation>
 			</annotation>
 		</attribute>
 	</complexType>
@@ -250,6 +257,7 @@
 			</documentation>
 		</annotation>
 		<choice minOccurs="0" maxOccurs="unbounded">
+			<element name="FlagCheck" type="state:FlagState"/>
 		</choice>
 	</complexType>
 
@@ -261,22 +269,29 @@
 		<choice minOccurs="0" maxOccurs="unbounded">
 			<element name="ClearValue" type="string">
 				<annotation>
-					<documentation>Clear the value in the named variable</documentation>
-				</annotation></element>
+					<documentation>Clear the value in the named variable
+					</documentation>
+				</annotation>
+			</element>
 			<element name="ClearIndexedValue" type="state:IndexedValue">
 				<annotation>
-					<documentation>Clear the value at the given indexed location</documentation>
-				</annotation></element>
+					<documentation>Clear the value at the given indexed location
+					</documentation>
+				</annotation>
+			</element>
 			<element name="StoreValue" type="state:StoreValue">
 				<annotation>
 					<documentation>Store the value</documentation>
-				</annotation></element>
+				</annotation>
+			</element>
 			<element name="SetFlag" type="state:FlagState">
 			</element>
 			<element name="Call" type="string">
 				<annotation>
-					<documentation>Call the named method. Must be declared as a symbol of type ROM.</documentation>
-				</annotation></element>
+					<documentation>Call the named method. Must be declared as a symbol
+						of type ROM.</documentation>
+				</annotation>
+			</element>
 		</choice>
 	</complexType>
 
@@ -286,28 +301,29 @@
 		<attribute name="flag" type="string" use="required"></attribute>
 		<attribute name="value" type="boolean" use="required"></attribute>
 	</complexType>
-	
+
 	<complexType name="StoreValue">
-		<sequence>
-			<element name="Source" type="string">
+			<attribute name="source" type="string" use="required">
 				<annotation>
 					<documentation>Location to copy from</documentation>
-				</annotation></element>
-			<element name="Destination" type="string">
+				</annotation>
+			</attribute>
+			<attribute name="destination" type="string" use="required">
 				<annotation>
 					<documentation>Location to copy to</documentation>
-				</annotation></element>
-			<element name="DestinationIndexer"  type="string" minOccurs="0">
+				</annotation>
+			</attribute>
+			<attribute name="destinationIndexer" type="string" use="optional">
 				<annotation>
 					<documentation>Optional indexer for the destination</documentation>
-				</annotation></element>
-		</sequence>
+				</annotation>
+			</attribute>
 	</complexType>
 
 	<complexType name="IndexedValue">
 		<sequence>
-			<element name="Variable" type="string"/>
-			<element name="Indexer" type="string"/>
+			<element name="Variable" type="string" />
+			<element name="Indexer" type="string" />
 		</sequence>
 	</complexType>
 
@@ -338,11 +354,27 @@
 				<documentation>Target node name</documentation>
 			</annotation>
 		</attribute>
+		<attribute name="input" use="optional" type="string">
+			<annotation><documentation>Shorthand to specify the input to produce this transition</documentation></annotation>
+		</attribute>
 	</complexType>
 
 	<complexType name="ScriptDefinition">
 		<sequence>
 			<choice minOccurs="1" maxOccurs="unbounded">
+				<element name="GuardCondition" type="state:ConditionList">
+					<annotation><documentation>
+						Will add a precondition to the next node defined
+					</documentation></annotation>
+				</element>
+				<element name="Command" type="state:CommandList">
+					<annotation><documentation>
+						Will add an entry command to the next node defined,
+						or if last in the list create an empty node with the
+						given commands. The generator will then squash this
+						empty node into a transition to the root node.
+					</documentation></annotation>
+				</element>
 				<element name="Literal" type="state:ScriptLiteral">
 					<annotation>
 						<documentation>Insert the nodes required to read the given literal
@@ -387,10 +419,7 @@
 
 	<complexType name="ScriptChoice">
 		<sequence>
-			<choice>
-				<element name="Input" type="string" />
-				<element name="Conditions" type="state:ConditionList" />
-			</choice>
+			<element name="Conditions" type="state:ConditionList" minOccurs="0"/>
 			<element name="Commands" type="state:CommandList" minOccurs="0"
 				maxOccurs="1">
 				<annotation>
@@ -398,55 +427,64 @@
 					</documentation>
 				</annotation>
 			</element>
-			<element name="GoTo" type="string" minOccurs="0" maxOccurs="1">
+		</sequence>
+		<attribute name="input" type="string" use="optional">
+					<annotation><documentation>Shorthand to specify the input to produce this transition</documentation></annotation>
+		</attribute>		
+		<attribute name="goto" type="string" use="optional">
 				<annotation>
 					<documentation>Node to go to from this transition.
-						If absent then the transition will flow into the rest of the script.
+						If absent then
+						the transition will flow into the rest of the script.
 					</documentation>
 				</annotation>
-			</element>
-		</sequence>
+		</attribute>
 	</complexType>
 
 	<complexType name="ScriptNumbers">
 		<attribute name="min" type="unsignedByte" use="required">
 			<annotation>
 				<documentation>Minimum amount of numbers to expect</documentation>
-			</annotation></attribute>
+			</annotation>
+		</attribute>
 		<attribute name="max" type="unsignedByte" use="required">
 			<annotation>
 				<documentation>Maximum amount of numbers to expect</documentation>
-			</annotation></attribute>
+			</annotation>
+		</attribute>
 		<attribute name="store" type="string" use="optional">
 			<annotation>
-				<documentation>Name of  a variable to store the numbers in.
-If max&gt;min then a null terminated string will be used, otherwise the requisite number of bytes.</documentation>
-			</annotation></attribute>
+				<documentation>Name of a variable to store the numbers in.
+					If max&gt;min then a null terminated string will be used, otherwise
+					the requisite number of bytes.</documentation>
+			</annotation>
+		</attribute>
 	</complexType>
 
 	<complexType name="UnitTestList">
 		<sequence>
-			<element name="Test" minOccurs="0" maxOccurs="unbounded" type="state:UnitTest"/>
+			<element name="Test" minOccurs="0" maxOccurs="unbounded"
+				type="state:UnitTest" />
 		</sequence>
 	</complexType>
-	
+
 	<complexType name="UnitTest">
-        <annotation>
-        	<documentation>Define a unit test for the model</documentation>
-        </annotation>
-        <sequence>
+		<annotation>
+			<documentation>Define a unit test for the model</documentation>
+		</annotation>
+		<sequence>
 			<element name="Input" type="string"></element>
 			<element name="Assert" type="state:UnitTestAssertionList"></element>
 		</sequence>
 	</complexType>
-	
+
 	<complexType name="UnitTestAssertionList">
 		<choice minOccurs="0" maxOccurs="unbounded">
 			<element name="AssertEquals" type="state:AssertVariableValue"></element>
 			<element name="AssertFlag" type="state:FlagState"></element>
 		</choice>
 	</complexType>
-	
+
 	<complexType name="AssertVariableValue">
 		<attribute name="variable" type="string" use="required"></attribute>
 		<attribute name="string" type="string" use="optional"></attribute>
@@ -456,5 +494,5 @@ If max&gt;min then a null terminated string will be used, otherwise the requisit
 	<simpleType name="ListOfNumbers">
 		<list itemType="integer"></list>
 	</simpleType>
-	
+
 </schema>
