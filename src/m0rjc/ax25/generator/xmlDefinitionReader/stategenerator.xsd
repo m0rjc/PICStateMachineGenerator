@@ -303,9 +303,9 @@
 	</complexType>
 
 	<complexType name="StoreValue">
-			<attribute name="source" type="string" use="required">
+			<attribute name="source" type="string" use="optional">
 				<annotation>
-					<documentation>Location to copy from</documentation>
+					<documentation>Location to copy from. Defaults to the machine input variable</documentation>
 				</annotation>
 			</attribute>
 			<attribute name="destination" type="string" use="required">
