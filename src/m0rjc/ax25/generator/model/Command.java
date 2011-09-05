@@ -110,4 +110,22 @@ public abstract class Command
 			}
 		};
 	}
+	
+	/**
+	 * Create a command to call a method.
+	 * The method name must have been registered with the model as an external symbol.
+	 * @param methodName
+	 *
+	 * @return
+	 */
+	public static Command call(final RomLocation method)
+	{
+		return new Command() {
+			@Override
+			public void accept(IModelVisitor visitor)
+			{
+				visitor.visitCommandMethodCall(method);
+			}		
+		};
+	}
 }

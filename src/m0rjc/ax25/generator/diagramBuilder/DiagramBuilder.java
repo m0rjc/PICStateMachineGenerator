@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import m0rjc.ax25.generator.model.Node;
+import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
@@ -226,10 +227,10 @@ public class DiagramBuilder implements IModelVisitor
 	@Override
 	public void finished()
 	{
-		m_output.println("    node [shape = doublecircle, color=black, style=filled; fontcolor=white];");
+		m_output.println("    node [shape = doublecircle, color=black, style=filled, fontcolor=white];");
 		m_output.println(m_startNodeDef);
 		
-		m_output.println("    node [shape = rect, color=lightblue, style=filled; fontcolor=black];");
+		m_output.println("    node [shape = rect, color=lightblue, style=filled, fontcolor=black];");
 		for(String line : m_nodeDefs) m_output.println(line);
 
 		m_output.println("    node [shape = circle, color=black, style=filled, fontcolor=white];");
@@ -241,10 +242,16 @@ public class DiagramBuilder implements IModelVisitor
 
 
 	@Override
-	public void visitDeclareExternalSymbol(String name)
+	public void visitDeclareExternalSymbol(Variable name)
 	{
 	}
 
+	@Override
+	public void visitDeclareExternalSymbol(RomLocation name)
+	{
+	}
+
+	
 
 	@Override
 	public void visitDeclareGlobalSymbol(String name)
@@ -282,7 +289,9 @@ public class DiagramBuilder implements IModelVisitor
 	{
 	}
 
-	
-	
-	
+
+	@Override
+    public void visitCommandMethodCall(RomLocation method)
+    {
+    }
 }

@@ -44,7 +44,8 @@ public class StateModel implements IModel
 	private List<String> m_globalSymbols = new ArrayList<String>();
 	
 	/** Symbols I import */
-	private List<String> m_externSymbols = new ArrayList<String>();
+	private List<Variable> m_externVariables = new ArrayList<Variable>();
+	private List<RomLocation> m_externRom = new ArrayList<RomLocation>();
 	
 	/** Root node of the model. */
 	private Node m_rootNode;
@@ -169,6 +170,7 @@ public class StateModel implements IModel
 	
 	/**
 	 * Register the existence of an externally defined variable.
+	 * @param requiresExtern false if it's declared in an included header, for example and SFR
 	 */
 	public void registerExternalVariable(Variable v, boolean requiresExtern)
 	{
@@ -180,7 +182,19 @@ public class StateModel implements IModel
 		m_variablesByName.put(name, v);
 		if(requiresExtern)
 		{
-			m_externSymbols.add(name);
+			m_externVariables.add(v);
+		}
+	}
+	
+	/**
+	 * Register an external method
+	 * @param name
+	 */
+	public void registerExternalMethod(RomLocation name, boolean requiresExtern)
+	{
+		if(requiresExtern)
+		{
+			m_externRom.add(name);
 		}
 	}
 
@@ -272,11 +286,17 @@ public class StateModel implements IModel
 	 */
 	public void accept(IModelVisitor visitor)
 	{
-		for(String name : m_externSymbols)
+		for(Variable v : m_externVariables)
 		{
-			visitor.visitDeclareExternalSymbol(name);
+			visitor.visitDeclareExternalSymbol(v);
 		}
 
+		for(RomLocation r : m_externRom)
+		{
+			visitor.visitDeclareExternalSymbol(r);
+		}
+
+		
 		for(String name : m_globalSymbols)
 		{
 			visitor.visitDeclareGlobalSymbol(name);

@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import m0rjc.ax25.generator.model.RomLocation;
+
 /**
  * Simulation of the state engine with methods to check the internal state.
  */
@@ -17,6 +19,7 @@ public class Simulation
 	private Set<String> m_assemblerSymbols = new HashSet<String>();
 	private Map<String, SimulatedNode> m_states = new HashMap<String, SimulatedNode>();
 	private Map<String, SimulatedVariable> m_variables = new HashMap<String, SimulatedVariable>();
+	private Map<String, SimulatedExternalMethod> m_externalMethods = new HashMap<String, SimulatedExternalMethod>();
 	
 	public void addNode(SimulatedNode node)
 	{
@@ -143,6 +146,45 @@ public class Simulation
 		return m_states.size();
 	}
 
+	/**
+	 * Set an action to perform when the method is called.
+	 * @param methodName
+	 * @param action
+	 * @throws SimulationException
+	 */
+	public void setMockAction(String methodName, MockAction action) throws SimulationException
+	{
+		SimulatedExternalMethod impl = m_externalMethods.get(methodName);
+		if(impl == null) throw new SimulationException("Method " + methodName + " not found (setup exception)");
+		impl.setMockAction(action);
+	}
+	
+	/**
+	 * Simulate a method call
+	 */
+	void call(RomLocation method) throws SimulationException
+    {
+		SimulatedExternalMethod impl = m_externalMethods.get(method.getName());
+		if(impl == null) throw new SimulationException("Method " + method.getName() + " not found (runtime exception)");
+		impl.call(this);
+    }
 
+	/**
+	 * Register an externally defined rom location.
+	 * It may be a method, so create a stub for it.
+	 * @param romLocation
+	 */
+	void registerExternalSymbol(RomLocation romLocation)
+    {
+		String name = romLocation.getName();
+		assertNameUnique(name);
+		m_externalMethods.put(name, new SimulatedExternalMethod(name));
+    }
 
+	public void assertMethodCalled(String name) throws SimulationException
+	{
+		SimulatedExternalMethod impl = m_externalMethods.get(name);
+		if(impl == null) throw new SimulationException("Method " + name + " not found (test assertion exception)");
+		if(impl.getCallCount() == 0) throw new SimulationException("Method " + name + " was not called.");
+	}
 }

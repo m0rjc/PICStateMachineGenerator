@@ -110,19 +110,6 @@ public class Node implements INode
 	}
 	
 	/**
-	 * Create an empty transition to the given node
-	 * @param target
-	 * @return
-	 */
-	private Transition createEmptyTransitionToNode(Node target)
-	{
-		Transition transition = new Transition(target);
-		m_transitions.add(transition);
-		return transition;
-	}
-
-	
-	/**
 	 * Create an empty transition to this node.
 	 * Add it to the transition list.
 	 */
@@ -143,23 +130,20 @@ public class Node implements INode
 	}
 
 	/**
-	 * Skip to the next , or if we see a $ go to the "I've just read $" node.
+	 * Skip to the next ',' or if we see a $ go to the "I've just read $" node.
 	 * @param dollar
 	 * @return
 	 */
-	public Node skipTo(Node dollar)
+	public Node skipToCommaElse(Transition... alternatePaths)
 	{
 		Node exitNode = createEmptyTransitionToNewNode()
 			.whenEqual(m_model.getInputVariable(), ',')
 			.getNode();
-		
-		if(dollar != null)
-		{
-			createEmptyTransitionToNode(dollar)
-				.whenEqual(m_model.getInputVariable(), '$');
-		}
+
+		addChoices(alternatePaths);
 		
 		createSelfTransition();
+
 		return exitNode;
 	}
 	

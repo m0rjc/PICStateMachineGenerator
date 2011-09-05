@@ -50,12 +50,10 @@ public class UnitTestGpsGeneratedModel
 		// Example taken from the datasheet for my module
 		m_simulation.acceptInput("$GPGGA,060932.448,2447.0959,N,12100.5204,E,1,08,1.1,108.7,M,,,,0000*0E\n\r");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_TIME, "060932");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_DEG, "24");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_MIN, "47");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_DEGMIN, "2447");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_HUNDREDTHS, "09");
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NORTH, true);
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_DEG, "121");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_MIN, "00");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_DEGMIN, "12100");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_HUNDREDTHS, "52");
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_EAST, true);
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NEW_POSITION, true);
@@ -69,12 +67,10 @@ public class UnitTestGpsGeneratedModel
 		// This checksum is wrong. At time of writing the checksum was not checked.
 		m_simulation.acceptInput("$GPGGA,184512.448,1234.5678,N,06012.9682,E,1,08,1.1,108.7,M,,,,0000*0E\n\r");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_TIME, "060932");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_DEG, "24");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_MIN, "47");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_DEGMIN, "2447");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_HUNDREDTHS, "09");
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NORTH, false);
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_DEG, "121");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_MIN, "00");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_DEGMIN, "12100");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_HUNDREDTHS, "52");
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_EAST, false);
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NEW_POSITION, true);		
@@ -86,13 +82,11 @@ public class UnitTestGpsGeneratedModel
 		// Example taken from the datasheet for my module
 		m_simulation.acceptInput("$GPGGA,060932.448,2447.0959garbledgarbledgarbled");
 		m_simulation.acceptInput("$GPGGA,060934.448,2447.0959,S,12100.5204,W,1,08,1.1,108.7,M,,,,0000*0E\n\r");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_TIME, "060932");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_DEG, "24");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_MIN, "47");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_TIME, "060934");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_DEGMIN, "2447");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_HUNDREDTHS, "09");
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NORTH, false);
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_DEG, "121");
-		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_MIN, "00");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_DEGMIN, "12100");
 		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_HUNDREDTHS, "52");
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_EAST, false);
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NEW_POSITION, true);				

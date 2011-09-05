@@ -1,6 +1,7 @@
 package m0rjc.ax25.generator.simulatorBuilder;
 
 import m0rjc.ax25.generator.model.Node;
+import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
@@ -31,11 +32,20 @@ public class SimulatorBuilder implements IModelVisitor
 	 * Declare an external symbol
 	 * @param name
 	 */
-	public void visitDeclareExternalSymbol(String name)
+	public void visitDeclareExternalSymbol(Variable name)
 	{
-		// Nothing to do.
 	}
 
+	/**
+	 * Declare an external symbol
+	 * @param name
+	 */
+	public void visitDeclareExternalSymbol(RomLocation name)
+	{
+		m_simulation.registerExternalSymbol(name);
+	}
+
+	
 	/**
 	 * Declare a global symbol - defined in this module to be exported
 	 * @param name
@@ -339,6 +349,22 @@ public class SimulatorBuilder implements IModelVisitor
 		});		
 	}
 	
+	@Override
+    public void visitCommandMethodCall(final RomLocation method)
+    {
+		final Simulation simulation = m_simulation;
+	
+		m_currentTransition.addAction(new SimulatedAction() {
+			@Override
+			public ActionResult run() throws SimulationException
+			{
+				Log.fine(String.format("    Command: CALL %s", method.getName()));
+				simulation.call(method);
+				return ActionResult.CONTINUE_TO_NEXT_ACTION;
+			}
+		});		
+    }
+
 	/** Encode a "Go to named node and return control" in the transition */
 	public void visitTransitionGoToNode(final String stateName)
 	{
@@ -370,7 +396,7 @@ public class SimulatorBuilder implements IModelVisitor
 			@Override
 			public ActionResult run() throws SimulationException
 			{
-				Log.info(String.format("     Unexpected Input: Falling back to %s", stateName));
+				Log.fine(String.format("     Unexpected Input: Falling back to %s", stateName));
 				simulation.setCurrentState(stateName);
 				return ActionResult.RETURN_FROM_STATE_ENGINE;
 			}

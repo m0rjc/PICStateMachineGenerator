@@ -1,6 +1,7 @@
 package m0rjc.ax25.generator.visitor;
 
 import m0rjc.ax25.generator.model.Node;
+import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
 
@@ -16,7 +17,8 @@ public interface IModelVisitor
 	 * Declare an external symbol
 	 * @param name
 	 */
-	void visitDeclareExternalSymbol(String name);
+	void visitDeclareExternalSymbol(Variable name);
+	void visitDeclareExternalSymbol(RomLocation name);
 
 	/**
 	 * Declare a global symbol - defined in this module to be exported
@@ -100,6 +102,9 @@ public interface IModelVisitor
 
 	/** Encode a command to set or clear a flag. If bit is more than 7 then more than one byte is used. */
 	void visitCommandSetFlag(Variable flags, int bit, boolean newValue);
+
+	/** Encode a CALL to the given method */
+	void visitCommandMethodCall(RomLocation method);
 	
 	/** Encode a "Go to named node and return control" in the transition */
 	void visitTransitionGoToNode(String stateName);
@@ -114,4 +119,5 @@ public interface IModelVisitor
 	 * End of visiting
 	 */
 	void finished();
+
 }
