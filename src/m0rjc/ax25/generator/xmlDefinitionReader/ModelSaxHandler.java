@@ -6,29 +6,40 @@ import org.xml.sax.SAXException;
 import m0rjc.ax25.generator.model.StateModel;
 
 /**
- * SAX handler that builds the Model
+ * SAX handler that builds the Model for a State Generator Run.
+ * Corresponds to complex element state:StateModel
+ * 
+ * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
-public class ModelSaxHandler extends ChainedSaxHandler
+class ModelSaxHandler extends ChainedSaxHandler
 {
+	/** Model being built by this Handler and its children */
 	private StateModel m_model;
-	private String m_rootName;
+	/** Name of the input variable declared on the Model element */
 	private String m_inputVariableName;
+	/** Name of the root node declared on the Model element */
+	private String m_rootName;
+	
+	private SymbolSaxHandler m_symbolHandler;
+	private NodeSaxHandler m_nodeHandler;
 	
 	@Override
 	protected void onStartElement(String uri, String localName, String qName,
-			Attributes attributes)
+			Attributes attributes) throws SAXException
 	{
-		if("Model".equals(localName))
+		if(isHandlingOuterElement())
 		{
 			onStartModel(attributes);
 		}
 		else if("Symbol".equals(localName))
 		{
-			onSymbol(attributes);
+			setChild(m_symbolHandler);
+			m_symbolHandler.startElement(uri, localName, qName, attributes);
 		}
 		else if("Node".equals(localName))
 		{
-			onNode(attributes);
+			setChild(m_nodeHandler);
+			m_nodeHandler.startElement(uri, localName, qName, attributes);
 		}
 	}
 		
@@ -41,18 +52,19 @@ public class ModelSaxHandler extends ChainedSaxHandler
 		String modelName = attributes.getValue("name");
 		m_rootName = attributes.getValue("root");
 		m_inputVariableName = attributes.getValue("inputVariable");
-		
 		m_model = new StateModel(modelName);
+		
+		m_symbolHandler = new SymbolSaxHandler(m_model);
+		m_nodeHandler = new NodeSaxHandler(m_model);
 	}
 
 	@Override
 	protected void onEndElement(String uri, String localName, String qName)
 			throws SAXException
 	{
-		if("Model".equals(localName))
+		if(isHandlingOuterElement())
 		{
 			onEndModel();
-			returnToParent();
 		}
 		if("Symbols".equals(localName))
 		{
@@ -75,6 +87,4 @@ public class ModelSaxHandler extends ChainedSaxHandler
 	{
 		m_model.setInputVariable(m_model.getVariable(m_inputVariableName));
 	}
-	
-	
 }

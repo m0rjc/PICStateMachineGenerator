@@ -3,6 +3,8 @@ package m0rjc.ax25.generator.xmlDefinitionReader;
 import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Variable;
+import m0rjc.ax25.generator.model.Variable.Access;
+import m0rjc.ax25.generator.model.Variable.Ownership;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -14,20 +16,24 @@ import org.xml.sax.SAXNotRecognizedException;
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
-public class SymbolSaxHandler extends ChainedSaxHandler
+class SymbolSaxHandler extends ChainedSaxHandler
 {
-	private StateModel m_model;
+	/** Model under construction */
+	private final StateModel m_model;
+	/** Variable under construction */
 	private Variable m_variable;
-	private String m_myName;
-	private StringBuilder m_flagName;
 	
+	public SymbolSaxHandler(StateModel model)
+	{
+		m_model = model;
+	}
+
 	@Override
 	protected void onStartElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException
 	{
-		if(m_myName == null)
+		if(isHandlingOuterElement())
 		{
-			m_myName = localName;
 			onSymbol(attributes);
 		}
 		else if("Flags".equals(localName))
@@ -36,7 +42,11 @@ public class SymbolSaxHandler extends ChainedSaxHandler
 		}
 		else if("Flag".equals(localName))
 		{
-			m_flagName = new StringBuilder();
+			if(m_variable == null)
+			{
+				throw new SAXException("FLAGS not supported in ROM symbols");
+			}
+			startReadingText();
 		}
 		else
 		{
@@ -47,8 +57,9 @@ public class SymbolSaxHandler extends ChainedSaxHandler
 	/**
 	 * Define a symbol based on the attributes
 	 * @param attributes
+	 * @throws SAXException 
 	 */
-	private void onSymbol(Attributes attributes)
+	private void onSymbol(Attributes attributes) throws SAXException
 	{
 		String name = attributes.getValue("name");
 		int size = getInt(attributes, "size", 1);
@@ -68,52 +79,73 @@ public class SymbolSaxHandler extends ChainedSaxHandler
 			}
 			return;
 		}
-		
-		Variable v;
-		if("accessram".equals(loc))
-		{
-			v = Variable.accessVariable(name, size);
-		}
-		else if(loc.startsWith("page"))
-		{
-			int page = Integer.parseInt(loc.substring(4));
-			v = Variable.pagedVariable(page, name, size);
-		}
-		else
-		{
-			throw new SAXException("Symbol location " + loc + " not recognised");
-		}
-		
-		if("extern".equals(decl))
-		{
-			m_model.registerExternalVariable(v, true);
-		}
-		else if("none".equals(decl))
-		{
-			m_model.registerExternalVariable(v, false);
-		}
-		else if(decl == null || "internal".equals(decl))
-		{
-			m_model.createVariable(v, false);
-		}
-		else if("global".equals(decl))
-		{
-			m_model.createVariable(v, true);
-		}
+
+		Variable.Access access = readAccess(loc);
+		int page = readPage(loc);
+		Variable.Ownership ownership = readOwnership(decl);
+
+		m_variable = new Variable(name, access, ownership, page, size);
+		m_model.addVariable(m_variable);
 	}
 
-	@Override
-	protected void onCharacters(char[] ch, int start, int length)
-			throws SAXException
+	/**
+	 * Read a SymbolOwnership
+	 * @param decl
+	 * @return
+	 * @throws SAXException
+	 */
+	private Ownership readOwnership(String decl) throws SAXException
 	{
-		if(m_flagName != null)
+		if(null == decl) return Ownership.INTERNAL;
+		if("internal".equals(decl)) return Ownership.INTERNAL;
+		if("global".equals(decl)) return Ownership.GLOBAL;
+		if("extern".equals(decl)) return Ownership.EXTERN;
+		if("none".equals(decl)) return Ownership.NONE;
+		throw new SAXException("Unrecognised variable ownership: decl=" + decl);
+	}
+
+	/**
+	 * Determine the numeric page from a loc declaration.
+	 * ACCESS and ROM return -1.
+	 * @param loc
+	 * @return
+	 * @throws SAXException
+	 */
+	private int readPage(String loc) throws SAXException
+	{
+		if(loc.startsWith("page"))
 		{
-			m_flagName.append(ch, start, length);
+			try
+			{
+				int page = Integer.parseInt(loc.substring(4));
+				if(page < 0 || page > 15) throw new SAXException("RAM page " + page + " is not valid.");
+				return page;
+			}
+			catch(NumberFormatException e)
+			{
+				throw new SAXException("Cannot decode RAM page " + loc + ".", e);
+			}
 		}
-		else
+		return -1;
+	}
+
+	/**
+	 * Read the state:SymbolLocation for a RAM based Variable
+	 * @param loc
+	 * @return
+	 * @throws SAXException 
+	 */
+	private Access readAccess(String loc) throws SAXException
+	{
+		if("accessram".equals(loc))
 		{
-			throw new SAXException("Characters not expected here.");
+			return Access.ACCESS_BANK;
 		}
+		if(loc.startsWith("page"))
+		{
+			return Access.PAGED_BANK;
+		}
+		throw new SAXException("Unrecognised symbol location: " + loc);
 	}
 
 	@Override
@@ -122,26 +154,19 @@ public class SymbolSaxHandler extends ChainedSaxHandler
 	{
 		if("Flag".equals(localName))
 		{
-			if(m_flagName.length() > 0)
+			String flagName = finishReadingText();
+			if(flagName.length() > 0)
 			{
-				m_variable.addFlag(m_flagName.toString());
-				m_flagName = null;
+				m_variable.addFlag(flagName.toString());
 			}
 			else
 			{
 				throw new SAXException("Flag name was empty");
 			}
 		}
-		else if(m_myName.equals(localName))
+		else if(isHandlingOuterElement())
 		{
-			m_myName = null; // Ready for the next
-			returnToParent(); // Passes the event back
+			m_variable = null;
 		}	
 	}
-
-	public void setModel(StateModel model)
-	{
-		m_model = model;
-	}
-
 }

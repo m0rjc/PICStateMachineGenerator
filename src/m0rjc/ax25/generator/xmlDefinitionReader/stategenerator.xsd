@@ -124,8 +124,8 @@
 
 	<simpleType name="SymbolLocation">
 		<annotation>
-			<documentation>The word "rom", the word "accessram" or "ram0" to
-				"ram15"
+			<documentation>The word "rom", the word "accessram" or "page0" to
+				"page15"
 			</documentation>
 		</annotation>
 		<restriction base="string">
@@ -328,10 +328,8 @@
 	</complexType>
 
 	<complexType name="IndexedValue">
-		<sequence>
-			<element name="Variable" type="string" />
-			<element name="Indexer" type="string" />
-		</sequence>
+		<attribute name="variable" type="string" use="required"/>
+		<attribute name="indexer" type="string" use="required"/>
 	</complexType>
 
 	<complexType name="Transition">
