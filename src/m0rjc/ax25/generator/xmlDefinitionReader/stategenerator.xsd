@@ -36,6 +36,13 @@
 				minOccurs="0" maxOccurs="1" />
 			<element name="Nodes" type="state:NodeDefinitionList"></element>
 		</sequence>
+		<attribute name="name" type="string" use="required">
+			<annotation>
+				<documentation>Short name to give the model. Used to generate names.
+				Must be a valid start of an assembler symbol
+				</documentation>
+			</annotation>
+		</attribute>
 		<attribute name="root" type="string" use="required">
 			<annotation>
 				<documentation>The name of the root/starting node in the model

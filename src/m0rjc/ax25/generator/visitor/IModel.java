@@ -11,9 +11,5 @@ public interface IModel
 	public abstract Node getInitialState();
 
 	/** Return the node with the given name */
-	public abstract Node getNode(String name);
-
-	/** Return the code segment to use to escape the state engine */
-	public abstract String[] getReturnCode();
-	
+	public abstract Node getNode(String name);	
 }

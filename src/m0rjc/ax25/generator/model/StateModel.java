@@ -60,7 +60,6 @@ public class StateModel implements IModel
 	public StateModel(String name)
 	{
 		m_modelName = name;
-		m_rootNode = createNode();
 	}
 	
 	/**
@@ -266,6 +265,10 @@ public class StateModel implements IModel
 	@Override
 	public Node getInitialState()
 	{
+		if(m_rootNode == null)
+		{
+			m_rootNode = createNode();
+		}
 		return m_rootNode;
 	}
 	
@@ -320,6 +323,11 @@ public class StateModel implements IModel
 		// TODO: I think I'm going to have to encode variables specially
 		m_rootNode.accept(new HashSet<String>(), visitor);
 		visitor.finished();
+	}
+
+	public void setRoot(Node node)
+	{
+		m_rootNode = node;
 	}
 
 }

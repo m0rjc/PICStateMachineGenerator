@@ -5,7 +5,6 @@ import java.io.PrintWriter;
 
 import m0rjc.ax25.generator.diagramBuilder.DiagramBuilder;
 import m0rjc.ax25.generator.model.Command;
-import m0rjc.ax25.generator.model.FlagCheckPrecondition;
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
@@ -35,9 +34,7 @@ public class GenerateGpsStateModel
 	public static final String GPS_FLAG_GPS_NEW_POSITION = "FLAG_GPS_NEW_POSITION";
 	public static final String GPS_FLAG_GPS_EAST = "FLAG_GPS_EAST";
 	public static final String GPS_FLAG_GPS_NORTH = "FLAG_GPS_NORTH";
-	
-	private static final String STATE_READ_TIME_HHMMSS = "ReadTimeHHMMSS";
-	
+		
 	public static void main(String[] args) throws Exception
 	{
 		StateModel model = buildmodel();
@@ -62,8 +59,6 @@ public class GenerateGpsStateModel
 			.addFlag(GPS_FLAG_GPS_NORTH)
 			.addFlag(GPS_FLAG_GPS_EAST);
 		
-		model.setReturnCode("RETFIE");
-
 		Node initial = model.getInitialState();
 		Node dollar = initial.addString("$");
 		
