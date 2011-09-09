@@ -54,4 +54,27 @@ public abstract class Precondition
 	{
 		return VariableValuePrecondition.createLE(variable, value - 1);
 	}
+
+	/**
+	 * Convenience method to create an empty precondition that will result in no
+	 * code in the final output.
+	 * @return
+	 */
+	public static Precondition emptyCondition()
+	{
+		return new CompositePrecondition();
+	}
+
+	/**
+	 * Convenience method to create an inclusing range.
+	 * @param v
+	 * @param firstValue
+	 * @param secondValue
+	 * @return
+	 */
+	public static Precondition range(Variable v, int firstValue, int secondValue)
+	{
+		return new CompositePrecondition(VariableValuePrecondition.createGE(v, firstValue),
+										 VariableValuePrecondition.createLE(v, secondValue));
+	}
 }

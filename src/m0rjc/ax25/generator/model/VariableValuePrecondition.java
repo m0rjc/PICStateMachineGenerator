@@ -63,20 +63,20 @@ public class VariableValuePrecondition extends Precondition
 	}
 
 	/** Create a precondition that requires variable = value */
-	public static Precondition createEQ(Variable variable, int value)
+	public static VariableValuePrecondition createEQ(Variable variable, int value)
 	{
 		return new VariableValuePrecondition(Comparison.EQUAL, variable, value);
 	}
 
 	/** Create a precondition that requires variable &gt;= value */
-	public static Precondition createGE(Variable variable, int value)
+	public static VariableValuePrecondition createGE(Variable variable, int value)
 	{
 		return new VariableValuePrecondition(Comparison.GREATER_THAN_OR_EQUAL,
 				variable, value);
 	}
 
 	/** Create a precondition that requires variable &lt;= value */
-	public static Precondition createLE(Variable variable, int value)
+	public static VariableValuePrecondition createLE(Variable variable, int value)
 	{
 		return new VariableValuePrecondition(Comparison.LESS_THAN_OR_EQUAL,
 				variable, value);
@@ -109,4 +109,33 @@ public class VariableValuePrecondition extends Precondition
 		m_comparison.accept(visitor, m_variable, m_value);
 	}
 
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((m_comparison == null) ? 0 : m_comparison.hashCode());
+		result = prime * result + m_value;
+		result = prime * result
+				+ ((m_variable == null) ? 0 : m_variable.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		VariableValuePrecondition other = (VariableValuePrecondition) obj;
+		if (m_comparison != other.m_comparison) return false;
+		if (m_value != other.m_value) return false;
+		if (m_variable == null)
+		{
+			if (other.m_variable != null) return false;
+		}
+		else if (!m_variable.equals(other.m_variable)) return false;
+		return true;
+	}
 }

@@ -17,7 +17,7 @@ import m0rjc.ax25.generator.model.StateModel;
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
 class NodeSaxHandler extends ChainedSaxHandler
-	implements ConditionListSaxHandler.Callback, CommandListSaxHandler.Callback
+	implements ConditionCreationCallback, CommandListSaxHandler.Callback
 {
 	/** The model under construction */
 	private StateModel m_model;

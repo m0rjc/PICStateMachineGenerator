@@ -44,4 +44,28 @@ public class CompositePrecondition extends Precondition
 		return true;
 	}
 
+	@Override
+	public int hashCode()
+	{
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((m_contents == null) ? 0 : m_contents.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj)
+	{
+		if (this == obj) return true;
+		if (obj == null) return false;
+		if (getClass() != obj.getClass()) return false;
+		CompositePrecondition other = (CompositePrecondition) obj;
+		if (m_contents == null)
+		{
+			if (other.m_contents != null) return false;
+		}
+		else if (!m_contents.equals(other.m_contents)) return false;
+		return true;
+	}
 }
