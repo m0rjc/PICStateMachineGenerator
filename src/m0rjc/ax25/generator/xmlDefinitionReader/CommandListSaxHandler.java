@@ -54,7 +54,8 @@ class CommandListSaxHandler extends ChainedSaxHandler
 		}
 		else if("StoreValue".equals(localName))
 		{
-			Variable source = getVariable(getString(attributes, "source"));
+			String sourceName = attributes.getValue("source");
+			Variable source = (sourceName != null ? getVariable(sourceName) : m_model.getInputVariable());
 			Variable destination = getVariable(getString(attributes, "destination"));
 			String indexer = attributes.getValue("destinationIndexer");
 			if(indexer != null)

@@ -15,7 +15,7 @@ import org.xml.sax.SAXException;
  * 
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
-public class InputSpecificationParser
+class InputSpecificationParser
 {
 	private char[] m_input;
 	private int m_startPosition;
@@ -27,6 +27,31 @@ public class InputSpecificationParser
 
 	public static final int WILDCARD = -1;
 
+	public static final InputSpecificationParser INSTANCE = new InputSpecificationParser();
+	
+	/**
+	 * Parse a condition made up of a single value or a range of values.
+	 * 
+	 * The following pattern is supported
+	 * 
+	 * <ul>
+	 * <li><code><i>token</i>-<i>token</i></code> A range, example
+	 * <code>'0'-'9'</code>
+	 * </ul>
+	 * 
+	 * 
+	 * @param v
+	 * @param input
+	 * @param start
+	 * @param length
+	 * @return
+	 * @throws SAXException
+	 */
+	public Precondition parseCondition(Variable v, String input) throws SAXException
+	{
+		return parseCondition(v, input.toCharArray(), 0, input.length());
+	}
+	
 	/**
 	 * Parse a condition made up of a single value or a range of values.
 	 * 
@@ -68,7 +93,7 @@ public class InputSpecificationParser
 		}
 	}
 
-	public Precondition doParseCondition(Variable v) throws SAXException
+	private Precondition doParseCondition(Variable v) throws SAXException
 	{
 		if (!isNotAtEnd())
 		{

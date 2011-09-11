@@ -63,7 +63,7 @@ public class Node implements INode
 	 * @return the node that is entered once the last character is read
 	 * @exception should the state conflict with existing code.
 	 */
-	public Node addString(String string) throws Exception
+	public Node addString(String string) 
 	{
 		char ch = string.charAt(0);
 		Node node = getOrCreateTransition(ch).getNode();
@@ -79,7 +79,7 @@ public class Node implements INode
 	 * @param ch
 	 * @return
 	 */
-	private Transition getOrCreateTransition(int ch) throws Exception
+	private Transition getOrCreateTransition(int ch) 
 	{
 		Variable input = m_model.getInputVariable();
 		
@@ -113,11 +113,19 @@ public class Node implements INode
 	 * Create an empty transition to this node.
 	 * Add it to the transition list.
 	 */
-	private Transition createSelfTransition()
+	public Transition createSelfTransition()
 	{
 		Transition transition = new Transition(this);
 		m_transitions.add(transition);
 		return transition;
+	}
+	
+	/**
+	 * Add the given transition
+	 */
+	public void addTransition(Transition transition)
+	{
+		m_transitions.add(transition);
 	}
 	
 	/**
@@ -165,7 +173,7 @@ public class Node implements INode
 	 * 
 	 * @return the node that is entered on reading the last number
 	 */
-	public Node addNumbers(int min, int max, Variable storage) throws Exception
+	public Node addNumbers(int min, int max, Variable storage) 
 	{
 		Variable input = m_model.getInputVariable();
 		CompositePrecondition p = new CompositePrecondition(
@@ -188,7 +196,7 @@ public class Node implements INode
 	 * 
 	 * @return the node that is entered on reading the last input
 	 */
-	private Node addInputClassSequence(Precondition condition, int min, int max, Variable storage) throws Exception
+	private Node addInputClassSequence(Precondition condition, int min, int max, Variable storage) 
 	{
 		Node exitNode;
 		Variable counter = m_model.getCountVariable();

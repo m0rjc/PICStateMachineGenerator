@@ -1,15 +1,14 @@
 package m0rjc.ax25.generator.xmlDefinitionReader;
 
-import java.util.concurrent.locks.Condition;
-
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-
 import m0rjc.ax25.generator.model.Command;
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
+import m0rjc.ax25.generator.model.Transition;
+
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
 
 /**
  * SAX handler to read a state:NodeDefinition element
@@ -17,23 +16,25 @@ import m0rjc.ax25.generator.model.StateModel;
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
 class NodeSaxHandler extends ChainedSaxHandler
-	implements ConditionCreationCallback, CommandListSaxHandler.Callback
+	implements ConditionListSaxHandler.Callback, CommandListSaxHandler.Callback, TransitionSaxHandler.Callback
 {
 	/** The model under construction */
 	private StateModel m_model;
 	/** The Node under construction */
 	private Node m_currentNode;
 	
-	private ConditionListSaxHandler m_conditionListHandler;
-	private CommandListSaxHandler m_commandListHandler;
-	private TransitionSaxHandler m_transitionHandler;
-	private ScriptSaxHandler m_scriptHandler;
+	private final ConditionListSaxHandler m_conditionListHandler;
+	private final CommandListSaxHandler m_commandListHandler;
+	private final TransitionSaxHandler m_transitionHandler;
+	private final ScriptSaxHandler m_scriptHandler;
 	
 	public NodeSaxHandler(StateModel model)
 	{
 		m_model = model;
 		m_conditionListHandler = new ConditionListSaxHandler(model, this);
 		m_commandListHandler = new CommandListSaxHandler(model, this);
+		m_transitionHandler = new TransitionSaxHandler(model, this);
+		m_scriptHandler = new ScriptSaxHandler(model);
 	}
 	
 	@Override
@@ -43,7 +44,8 @@ class NodeSaxHandler extends ChainedSaxHandler
 		if(isHandlingOuterElement())
 		{
 			// The start of this Node element
-			onNode(attributes);
+			String name = getString(attributes, "name");
+			m_currentNode = m_model.createNamedNode(name);
 		}
 		else if("EntryConditions".equals(localName))
 		{
@@ -60,8 +62,9 @@ class NodeSaxHandler extends ChainedSaxHandler
 			setChild(m_transitionHandler);
 			m_transitionHandler.startElement(uri, localName, qName, attributes);
 		}
-		else if("Script".eqauls(localName))
+		else if("Script".equals(localName))
 		{
+			m_scriptHandler.setCurrentNode(m_currentNode);
 			setChild(m_scriptHandler);
 			m_scriptHandler.startElement(uri, localName, qName, attributes);
 		}
@@ -69,13 +72,6 @@ class NodeSaxHandler extends ChainedSaxHandler
 		{
 			throw new SAXNotRecognizedException(localName);
 		}
-	}
-
-	/** Start of the Element */
-	private void onNode(Attributes attributes)
-	{
-		String name = attributes.getValue("name");
-		m_currentNode = m_model.createNamedNode(name);
 	}
 
 	@Override
@@ -89,6 +85,10 @@ class NodeSaxHandler extends ChainedSaxHandler
 	{
 		m_currentNode.addEntryCondition(condition);
 	}
-	
-	
+
+	@Override
+	public void onNewTransition(Transition t) throws SAXException
+	{
+		m_currentNode.addTransition(t);
+	}
 }

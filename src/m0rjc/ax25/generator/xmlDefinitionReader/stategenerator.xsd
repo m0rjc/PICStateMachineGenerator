@@ -372,7 +372,7 @@
 						Will add a precondition to the next node defined
 					</documentation></annotation>
 				</element>
-				<element name="Command" type="state:CommandList">
+				<element name="Commands" type="state:CommandList">
 					<annotation><documentation>
 						Will add an entry command to the next node defined,
 						or if last in the list create an empty node with the
@@ -437,7 +437,7 @@
 		<attribute name="input" type="string" use="optional">
 					<annotation><documentation>Shorthand to specify the input to produce this transition</documentation></annotation>
 		</attribute>		
-		<attribute name="goto" type="string" use="optional">
+		<attribute name="target" type="string" use="optional">
 				<annotation>
 					<documentation>Node to go to from this transition.
 						If absent then

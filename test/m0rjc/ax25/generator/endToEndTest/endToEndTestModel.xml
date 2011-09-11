@@ -30,14 +30,14 @@
 					<Literal>,</Literal>
 					<Numbers min="6" max="6" store="gpsTime" />
 					<SkipTo>
-						<Choice input="'$'" goto="dollar" />
+						<Choice input="'$'" target="dollar" />
 						<Choice input="','" />
 					</SkipTo>
 					<Numbers min="4" max="4" store="gpsLatitudeDegMin" />
 					<Literal>.</Literal>
 					<Numbers max="2" min="2" store="gpsLatitudeHundredths" />
 					<SkipTo>
-						<Choice input="'$'" goto="dollar" />
+						<Choice input="'$'" target="dollar" />
 						<Choice input="','" />
 					</SkipTo>
 					<Choices>
@@ -59,7 +59,7 @@
 					<Literal>.</Literal>
 					<Numbers max="2" min="2" store="gpsLongitudeHundredths" />
 					<SkipTo>
-						<Choice input="'$'" goto="dollar" />
+						<Choice input="'$'" target="dollar" />
 						<Choice input="','" />
 					</SkipTo>
 					<Choices>
@@ -82,9 +82,9 @@
 							</Commands>
 						</Choice>
 					</Choices>
-					<Command>
+					<Commands>
 						<SetFlag variable="gpsFlags" flag="FLAG_GPS_NEW_POSITION" value="true" />
-					</Command>
+					</Commands>
 				</Script>
 			</Node>
 		</Nodes>

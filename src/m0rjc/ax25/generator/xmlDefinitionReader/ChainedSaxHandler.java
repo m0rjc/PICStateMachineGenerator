@@ -240,6 +240,32 @@ class ChainedSaxHandler extends DefaultHandler
 			throw new SAXException("Cannot parse number: " + qName + "=" + value);
 		}
 	}
+
+	/**
+	 * Return an integer - mandatory
+	 * @param attr
+	 * @param qName
+	 * @return
+	 * @throws SAXException 
+	 */
+	protected final int getInt(Attributes attr, String qName) throws SAXException
+	{
+		String value = attr.getValue(qName);
+		if(value == null)
+		{
+			throw new SAXException("Value missing for attribute: " + qName);
+		}
+		
+		try
+		{
+			return Integer.parseInt(value);
+		}
+		catch(NumberFormatException e)
+		{
+			throw new SAXException("Cannot parse number: " + qName + "=" + value);
+		}
+	}
+
 	
 	/**
 	 * Read a boolean. If not provided then throw an exception

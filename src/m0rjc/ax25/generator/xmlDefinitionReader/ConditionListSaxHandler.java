@@ -15,10 +15,21 @@ import m0rjc.ax25.generator.model.Variable;
  */
 class ConditionListSaxHandler extends ChainedSaxHandler
 {
-	private ConditionCreationCallback m_callbackHandler;
+	/**
+	 * Callback interface for Condition creation.
+	 * @author Richard Corfield <m0rjc@raynet-uk.net>
+	 */
+	public interface Callback
+	{
+		/** Callback to create a new Precondition and attach it to wherever it needs to go. */
+		void onNewCondition(Precondition condition) throws SAXException;
+	}
+	
+	private Callback m_callbackHandler;
 	private StateModel m_model;
 	
-	public ConditionListSaxHandler(StateModel model, ConditionCreationCallback callbackHandler)
+	
+	public ConditionListSaxHandler(StateModel model, Callback callbackHandler)
 	{
 		m_model = model;
 		m_callbackHandler = callbackHandler;
