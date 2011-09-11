@@ -12,6 +12,15 @@
 		</annotation>
 	</element>
 
+	<simpleType name="assemblerSymbol">
+        <annotation>
+        	<documentation>A valid symbol name in MPASM assembler</documentation>
+        </annotation>
+        <restriction base="normalizedString">
+			<pattern value="[_a-zA-Z][_a-zA-Z0-9]*"/>
+		</restriction>
+	</simpleType>
+
 	<complexType name="StateGeneratorRun">
 		<sequence>
 			<element name="Model" type="state:StateModel" minOccurs="1"
@@ -36,20 +45,20 @@
 				minOccurs="0" maxOccurs="1" />
 			<element name="Nodes" type="state:NodeDefinitionList"></element>
 		</sequence>
-		<attribute name="name" type="string" use="required">
+		<attribute name="name" type="state:assemblerSymbol" use="required">
 			<annotation>
 				<documentation>Short name to give the model. Used to generate names.
 				Must be a valid start of an assembler symbol
 				</documentation>
 			</annotation>
 		</attribute>
-		<attribute name="root" type="string" use="required">
+		<attribute name="root" type="state:assemblerSymbol" use="required">
 			<annotation>
 				<documentation>The name of the root/starting node in the model
 				</documentation>
 			</annotation>
 		</attribute>
-		<attribute name="inputVariable" type="string" use="required">
+		<attribute name="inputVariable" type="state:assemblerSymbol" use="required">
 			<annotation>
 				<documentation>The name of the input variable in the model</documentation>
 			</annotation>
@@ -85,7 +94,7 @@
 				</annotation>
 			</element>
 		</sequence>
-		<attribute name="name" type="string" use="required">
+		<attribute name="name" type="state:assemblerSymbol" use="required">
 			<annotation>
 				<documentation>Symbol name. A valid assembler symbol
 				</documentation>
@@ -118,7 +127,7 @@
 
 	<complexType name="FlagDeclarationList">
 		<sequence>
-			<element name="Flag" type="string" minOccurs="0" maxOccurs="unbounded" />
+			<element name="Flag" type="state:assemblerSymbol" minOccurs="0" maxOccurs="unbounded" />
 		</sequence>
 	</complexType>
 
@@ -128,7 +137,7 @@
 				"page15"
 			</documentation>
 		</annotation>
-		<restriction base="string">
+		<restriction base="normalizedString">
 			<enumeration value="accessram">
 				<annotation>
 					<documentation>Storage in ACCESS ram</documentation>
@@ -180,7 +189,7 @@
 				Who is responsible for declaring Symbol storage
 			</documentation>
 		</annotation>
-		<restriction base="string">
+		<restriction base="normalizedString">
 			<enumeration value="internal">
 				<annotation>
 					<documentation>Declare the storage in this module. Do not export
@@ -255,7 +264,7 @@
 				</element>
 			</choice>
 		</sequence>
-		<attribute name="name" type="string" use="required"></attribute>
+		<attribute name="name" type="state:assemblerSymbol" use="required"></attribute>
 	</complexType>
 
 	<complexType name="ConditionList">
@@ -274,7 +283,7 @@
 			</documentation>
 		</annotation>
 		<choice minOccurs="0" maxOccurs="unbounded">
-			<element name="ClearValue" type="string">
+			<element name="ClearValue" type="state:assemblerSymbol">
 				<annotation>
 					<documentation>Clear the value in the named variable
 					</documentation>
@@ -293,7 +302,7 @@
 			</element>
 			<element name="SetFlag" type="state:FlagState">
 			</element>
-			<element name="Call" type="string">
+			<element name="Call" type="state:assemblerSymbol">
 				<annotation>
 					<documentation>Call the named method. Must be declared as a symbol
 						of type ROM.</documentation>
@@ -304,23 +313,23 @@
 
 
 	<complexType name="FlagState">
-		<attribute name="variable" type="string" use="required"></attribute>
-		<attribute name="flag" type="string" use="required"></attribute>
+		<attribute name="variable" type="state:assemblerSymbol" use="required"></attribute>
+		<attribute name="flag" type="state:assemblerSymbol" use="required"></attribute>
 		<attribute name="value" type="boolean" use="required"></attribute>
 	</complexType>
 
 	<complexType name="StoreValue">
-			<attribute name="source" type="string" use="optional">
+			<attribute name="source" type="state:assemblerSymbol" use="optional">
 				<annotation>
 					<documentation>Location to copy from. Defaults to the machine input variable</documentation>
 				</annotation>
 			</attribute>
-			<attribute name="destination" type="string" use="required">
+			<attribute name="destination" type="state:assemblerSymbol" use="required">
 				<annotation>
 					<documentation>Location to copy to</documentation>
 				</annotation>
 			</attribute>
-			<attribute name="destinationIndexer" type="string" use="optional">
+			<attribute name="destinationIndexer" type="state:assemblerSymbol" use="optional">
 				<annotation>
 					<documentation>Optional indexer for the destination</documentation>
 				</annotation>
@@ -328,8 +337,8 @@
 	</complexType>
 
 	<complexType name="IndexedValue">
-		<attribute name="variable" type="string" use="required"/>
-		<attribute name="indexer" type="string" use="required"/>
+		<attribute name="variable" type="state:assemblerSymbol" use="required"/>
+		<attribute name="indexer" type="state:assemblerSymbol" use="required"/>
 	</complexType>
 
 	<complexType name="Transition">
@@ -338,15 +347,13 @@
 			</documentation>
 		</annotation>
 		<sequence>
-			<element name="Conditions" type="state:ConditionList"
-				minOccurs="0" maxOccurs="1">
+			<element name="Conditions" type="state:ConditionList" minOccurs="0" maxOccurs="1">
 				<annotation>
 					<documentation>Conditions that must be satisfied to enter this
 						transition</documentation>
 				</annotation>
 			</element>
-			<element name="Commands" type="state:CommandList" minOccurs="0"
-				maxOccurs="1">
+			<element name="Commands" type="state:CommandList" minOccurs="0"	maxOccurs="1">
 				<annotation>
 					<documentation>Commands to execute whenever this transition is
 						executed
@@ -354,12 +361,12 @@
 				</annotation>
 			</element>
 		</sequence>
-		<attribute name="target" use="required" type="string">
+		<attribute name="target" use="required" type="state:assemblerSymbol">
 			<annotation>
 				<documentation>Target node name</documentation>
 			</annotation>
 		</attribute>
-		<attribute name="input" use="optional" type="string">
+		<attribute name="input" use="optional" type="normalizedString">
 			<annotation><documentation>Shorthand to specify the input to produce this transition</documentation></annotation>
 		</attribute>
 	</complexType>
@@ -434,10 +441,10 @@
 				</annotation>
 			</element>
 		</sequence>
-		<attribute name="input" type="string" use="optional">
+		<attribute name="input" type="normalizedString" use="optional">
 					<annotation><documentation>Shorthand to specify the input to produce this transition</documentation></annotation>
 		</attribute>		
-		<attribute name="target" type="string" use="optional">
+		<attribute name="target" type="state:assemblerSymbol" use="optional">
 				<annotation>
 					<documentation>Node to go to from this transition.
 						If absent then
@@ -458,7 +465,7 @@
 				<documentation>Maximum amount of numbers to expect</documentation>
 			</annotation>
 		</attribute>
-		<attribute name="store" type="string" use="optional">
+		<attribute name="store" type="state:assemblerSymbol" use="optional">
 			<annotation>
 				<documentation>Name of a variable to store the numbers in.
 					If max&gt;min then a null terminated string will be used, otherwise
@@ -495,7 +502,7 @@
 	</complexType>
 
 	<complexType name="AssertVariableValue">
-		<attribute name="variable" type="string" use="required"></attribute>
+		<attribute name="variable" type="state:assemblerSymbol" use="required"></attribute>
 		<attribute name="string" type="string" use="optional"></attribute>
 		<attribute name="numbers" type="state:ListOfNumbers" use="optional"></attribute>
 	</complexType>
