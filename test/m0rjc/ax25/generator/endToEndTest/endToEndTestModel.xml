@@ -15,7 +15,7 @@
 			<Symbol name="gpsLongitudeDegMin" size="5" loc="page1" decl="global" />
 			<Symbol name="gpsLongitudeHundredths" size="2" loc="page1" decl="global" />
 			<Symbol name="gpsLatitudeDegMin" size="4" loc="page1" decl="global" />
-			<Symbol name="gpsLatitiudeHundredths" size="2" loc="page1" decl="global" />
+			<Symbol name="gpsLatitudeHundredths" size="2" loc="page1" decl="global" />
 		</Symbols>
 		<Nodes>
 			<Node name="root">
@@ -68,7 +68,7 @@
 								<SetFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="true" />
 							</Commands>
 						</Choice>
-						<Choice input="'N'">
+						<Choice input="'W'">
 							<Commands>
 								<SetFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="false" />
 							</Commands>
@@ -93,17 +93,15 @@
 		<Test>
 			<Description>GPGGA with valid fix stores fix</Description>
 			<Input>$GPGGA,060932.448,2447.0959,N,12100.5204,E,1,08,1.1,108.7,M,,,,0000*0E</Input>
-			<Assert>
-				<AssertEquals variable="gpsTime" string="060932" />
-				<AssertEquals variable="gpsLatitudeDegMin" string="2447" />
-				<AssertEquals variable="gpsLatitudeHundredths" string="09" />
-				<AssertFlag flag="FLAG_GPS_NORTH" variable="gpsFlags" value="true" />
-				<AssertEquals variable="gpsLongitudeDegMin" string="12100" />
-				<AssertEquals variable="gpsLongitudeHundredths" string="52" />
-				<AssertFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="true" />
-				<AssertEquals variable="gpsQuality" string="1" />
-				<AssertFlag flag="FLAG_GPS_NEW_POSITION" variable="gpsFlags" value="true" />
-			</Assert>
+			<AssertEquals variable="gpsTime" string="060932" />
+			<AssertEquals variable="gpsLatitudeDegMin" string="2447" />
+			<AssertEquals variable="gpsLatitudeHundredths" string="09" />
+			<AssertFlag flag="FLAG_GPS_NORTH" variable="gpsFlags" value="true" />
+			<AssertEquals variable="gpsLongitudeDegMin" string="12100" />
+			<AssertEquals variable="gpsLongitudeHundredths" string="52" />
+			<AssertFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="true" />
+			<AssertEquals variable="gpsQuality" string="1" />
+			<AssertFlag flag="FLAG_GPS_NEW_POSITION" variable="gpsFlags" value="true" />
 		</Test>
 		<Test>
 			<Description>GPGGA with an existing unread fix does not overwrite</Description>
@@ -111,17 +109,15 @@
   			$GPGGA,060932.448,2447.0959,S,12100.5204,W,1,08,1.1,108.7,M,,,,0000*0E
   			$GPGGA,123432.001,6031.0959,N,14100.5204,E,1,08,1.1,108.7,M,,,,0000*??
   			</Input>
-			<Assert>
-				<AssertEquals variable="gpsTime" string="060932" />
-				<AssertEquals variable="gpsLatitudeDegMin" string="2447" />
-				<AssertEquals variable="gpsLatitudeHundredths" string="09" />
-				<AssertFlag flag="FLAG_GPS_NORTH" variable="gpsFlags" value="false" />
-				<AssertEquals variable="gpsLongitudeDegMin" string="12100" />
-				<AssertEquals variable="gpsLongitudeHundredths" string="52" />
-				<AssertFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="false" />
-				<AssertEquals variable="gpsQuality" string="1" />
-				<AssertFlag flag="FLAG_GPS_NEW_POSITION" variable="gpsFlags" value="true" />
-			</Assert>
+			<AssertEquals variable="gpsTime" string="060932" />
+			<AssertEquals variable="gpsLatitudeDegMin" string="2447" />
+			<AssertEquals variable="gpsLatitudeHundredths" string="09" />
+			<AssertFlag flag="FLAG_GPS_NORTH" variable="gpsFlags" value="false" />
+			<AssertEquals variable="gpsLongitudeDegMin" string="12100" />
+			<AssertEquals variable="gpsLongitudeHundredths" string="52" />
+			<AssertFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="false" />
+			<AssertEquals variable="gpsQuality" string="1" />
+			<AssertFlag flag="FLAG_GPS_NEW_POSITION" variable="gpsFlags" value="true" />
 		</Test>
 	</UnitTests>
 </StateGeneratorRun>

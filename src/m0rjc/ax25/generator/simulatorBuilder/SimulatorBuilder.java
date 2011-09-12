@@ -408,6 +408,6 @@ public class SimulatorBuilder implements IModelVisitor
 	 */
 	public void finished()
 	{
-		Log.info(String.format("Simulator initialised for test. %d states", m_simulation.getStateCount()));
+		Log.fine(String.format("Simulator initialised for test. %d states", m_simulation.getStateCount()));
 	}
 }

@@ -1,9 +1,11 @@
 package m0rjc.ax25.generator.endToEndTest;
 
 import java.io.InputStream;
+import java.util.logging.LogManager;
 
 import m0rjc.ax25.generator.xmlDefinitionReader.XmlDefinitionLoader;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -17,6 +19,17 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class UnitTestLoadModel
 {
+	@BeforeClass
+	public static void systemSetup() throws Exception
+	{
+		// Set up logging
+		InputStream in = UnitTestLoadModel.class.getResourceAsStream("logging.properties");
+		if(in != null)
+		{
+			LogManager.getLogManager().readConfiguration(in);
+		}
+	}
+	
 	@Test
 	public void testLoadModel() throws Exception
 	{

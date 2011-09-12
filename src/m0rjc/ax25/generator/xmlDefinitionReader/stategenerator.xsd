@@ -489,16 +489,10 @@
 			<element name="Description" type="string" minOccurs="0"/>
 			<choice minOccurs="0" maxOccurs="unbounded">
 				<element name="Input" type="string"></element>
-				<element name="Assert" type="state:UnitTestAssertionList"></element>
+				<element name="AssertEquals" type="state:AssertVariableValue"></element>
+				<element name="AssertFlag" type="state:FlagState"></element>
 			</choice>
 		</sequence>
-	</complexType>
-
-	<complexType name="UnitTestAssertionList">
-		<choice minOccurs="0" maxOccurs="unbounded">
-			<element name="AssertEquals" type="state:AssertVariableValue"></element>
-			<element name="AssertFlag" type="state:FlagState"></element>
-		</choice>
 	</complexType>
 
 	<complexType name="AssertVariableValue">

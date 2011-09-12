@@ -103,14 +103,14 @@ public class Simulation
 	}
 
 
-	private void assertBytes(String variableName, byte[] bytes) throws SimulationException
+	public void assertBytes(String variableName, byte[] bytes) throws SimulationException
 	{
 		SimulatedVariable v = getVariable(variableName);
 		for(int i = 0; i < bytes.length; i++)
 		{
 			if(v.getValue(i) != bytes[i])
 			{
-				throw new SimulationException(String.format("Variable %s, unexpected data at index %d. Expected %x got %x", variableName, i, bytes[i], v.getValue(i)));
+				throw new SimulationException(String.format("Variable %s, unexpected data at index %d. Expected 0x%x got 0x%x", variableName, i, bytes[i], v.getValue(i)));
 			}
 		}
 	}

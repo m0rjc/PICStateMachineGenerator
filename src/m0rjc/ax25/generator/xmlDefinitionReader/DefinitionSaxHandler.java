@@ -11,6 +11,7 @@ import org.xml.sax.SAXException;
 class DefinitionSaxHandler extends ChainedSaxHandler
 {
 	private ModelSaxHandler m_modelHandler = new ModelSaxHandler();
+	private UnitTestSaxHandler m_testHandler = new UnitTestSaxHandler();
 	
 	@Override
 	protected void onStartElement(String uri, String localName, String qName,
@@ -20,6 +21,12 @@ class DefinitionSaxHandler extends ChainedSaxHandler
 		{
 			setChild(m_modelHandler);
 			m_modelHandler.startElement(uri, localName, qName, attributes);
+		}
+		else if("UnitTests".equals(localName))
+		{
+			m_testHandler.setModel(m_modelHandler.getModel());
+			setChild(m_testHandler);
+			m_testHandler.startElement(uri, localName, qName, attributes);
 		}
 	}
 	

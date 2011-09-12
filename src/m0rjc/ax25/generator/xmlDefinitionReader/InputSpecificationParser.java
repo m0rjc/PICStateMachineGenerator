@@ -140,6 +140,28 @@ class InputSpecificationParser
 	 * @return
 	 * @throws SAXException
 	 */
+	public int parseValue(String input)
+			throws SAXException
+	{
+		return parseValue(input.toCharArray(), 0, input.length());
+	}
+	
+	/**
+	 * Parse a single value.
+	 * 
+	 * <ul>
+	 * <li><code>123</code> A decimal number
+	 * <li><code>0x1A</code> A hex number
+	 * <li><code>'a'</code> A character
+	 * <li><code>*</code> Anything
+	 * </ul>
+	 * 
+	 * @param input
+	 * @param start
+	 * @param length
+	 * @return
+	 * @throws SAXException
+	 */
 	public int parseValue(char[] input, int start, int length)
 			throws SAXException
 	{

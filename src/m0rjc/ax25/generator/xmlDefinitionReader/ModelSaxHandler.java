@@ -87,4 +87,13 @@ class ModelSaxHandler extends ChainedSaxHandler
 	{
 		m_model.setInputVariable(m_model.getVariable(m_inputVariableName));
 	}
+
+	/**
+	 * Return the model that has been generated.
+	 * @return
+	 */
+	public StateModel getModel()
+	{
+		return m_model;
+	}
 }
