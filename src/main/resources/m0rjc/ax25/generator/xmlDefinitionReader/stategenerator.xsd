@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema"
+	targetNamespace="http://net.raynet-uk.m0rjc.picprojects/stategenerator"
+	xmlns:state="http://net.raynet-uk.m0rjc.picprojects/stategenerator"
+	elementFormDefault="qualified">
+
+    <annotation>
+    	<documentation></documentation></annotation>
+    <element name="StateGeneratorRun" type="state:StateGeneratorRun">
+		<annotation>
+			<documentation>Define a run of the state generator</documentation>
+		</annotation>
+	</element>
+
+	<simpleType name="assemblerSymbol">
+        <annotation>
+        	<documentation>A valid symbol name in MPASM assembler</documentation>
+        </annotation>
+        <restriction base="normalizedString">
+			<pattern value="[_a-zA-Z][_a-zA-Z0-9]*"/>
+		</restriction>
+	</simpleType>
+
+	<complexType name="StateGeneratorRun">
+		<sequence>
+			<element name="Model" type="state:StateModel" minOccurs="1"
+				maxOccurs="1">
+				<key name="SymbolName">
+					<annotation>
+						<documentation>Symbol names must be unique</documentation>
+					</annotation>
+					<selector xpath="Symbols/* | Nodes/*" />
+					<field xpath="@name" />
+				</key>
+			</element>
+			<element name="UnitTests" type="state:UnitTestList"></element>
+			<!-- element name="Output" type="state:OutputList"></element> -->
+		</sequence>
+	</complexType>
+
+	<!-- Raw model. The basics. -->
+	<complexType name="StateModel">
+		<sequence>
+			<element name="Symbols" type="state:SymbolDeclarationList"
+				minOccurs="0" maxOccurs="1" />
+			<element name="Nodes" type="state:NodeDefinitionList"></element>
+		</sequence>
+		<attribute name="name" type="state:assemblerSymbol" use="required">
+			<annotation>
+				<documentation>Short name to give the model. Used to generate names.
+				Must be a valid start of an assembler symbol
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="root" type="state:assemblerSymbol" use="required">
+			<annotation>
+				<documentation>The name of the root/starting node in the model
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="inputVariable" type="state:assemblerSymbol" use="required">
+			<annotation>
+				<documentation>The name of the input variable in the model</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+
+	<complexType name="SymbolDeclarationList">
+		<sequence>
+			<element name="Symbol" type="state:SymbolDeclaration"
+				minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+	</complexType>
+
+	<complexType name="SymbolDeclaration">
+		<sequence>
+			<element name="Flags" type="state:FlagDeclarationList"
+				minOccurs="0">
+				<annotation>
+					<documentation>
+						Only valid for variables.
+						If a variable is a bit
+						field made up of flags, then
+						flag names can be
+						listed here.
+						Each flag
+						will be allocated a bit.
+						If
+						more than 8 flags
+						are declared then the
+						variable will be grown as
+						needed.
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="name" type="state:assemblerSymbol" use="required">
+			<annotation>
+				<documentation>Symbol name. A valid assembler symbol
+				</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="size" type="unsignedInt" use="optional"
+			default="1">
+			<annotation>
+				<documentation>Size to allocate in bytes</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="loc" type="state:SymbolLocation" use="required">
+			<annotation>
+				<documentation>RAM page or ROM that the Symbol is in</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="decl" type="state:SymbolOwnership" use="optional"
+			default="internal">
+			<annotation>
+				<documentation>Where the Symbol storage is declared. Either
+					internal
+					to this module,
+					defined by this module and GLOBAL, imported as
+					EXTERN, or provided by an
+					include file.
+				</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+
+	<complexType name="FlagDeclarationList">
+		<sequence>
+			<element name="Flag" type="state:assemblerSymbol" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+	</complexType>
+
+	<simpleType name="SymbolLocation">
+		<annotation>
+			<documentation>The word "rom", the word "accessram" or "page0" to
+				"page15"
+			</documentation>
+		</annotation>
+		<restriction base="normalizedString">
+			<enumeration value="accessram">
+				<annotation>
+					<documentation>Storage in ACCESS ram</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="rom">
+				<annotation>
+					<documentation>An item in ROM, perhaps a method or a table
+					</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="page0">
+				<annotation>
+					<documentation>The upper part of RAM Page 0 (not ACCESS RAM),
+						or RAM
+						Page 0 if Extended Instruction set is on
+					</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="page1">
+				<annotation>
+					<documentation>RAM page 1</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="page2">
+				<annotation>
+					<documentation>RAM page 2</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="page3"></enumeration>
+			<enumeration value="page4"></enumeration>
+			<enumeration value="page5"></enumeration>
+			<enumeration value="page6"></enumeration>
+			<enumeration value="page7"></enumeration>
+			<enumeration value="page8"></enumeration>
+			<enumeration value="page9"></enumeration>
+			<enumeration value="page10"></enumeration>
+			<enumeration value="page11"></enumeration>
+			<enumeration value="page12"></enumeration>
+			<enumeration value="page13"></enumeration>
+			<enumeration value="page14"></enumeration>
+			<enumeration value="page15"></enumeration>
+		</restriction>
+	</simpleType>
+
+	<simpleType name="SymbolOwnership">
+		<annotation>
+			<documentation>
+				Who is responsible for declaring Symbol storage
+			</documentation>
+		</annotation>
+		<restriction base="normalizedString">
+			<enumeration value="internal">
+				<annotation>
+					<documentation>Declare the storage in this module. Do not export
+						it.
+					</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="global">
+				<annotation>
+					<documentation>Declare the storage in this module and export it as
+						GLOBAL
+					</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="extern">
+				<annotation>
+					<documentation>The Symbol is defined elsewhere. Declare it as
+						EXTERN
+					</documentation>
+				</annotation>
+			</enumeration>
+			<enumeration value="none">
+				<annotation>
+					<documentation>Do not declare the Symbol in the output file.
+						It is
+						handled by an include file or included literal code.
+					</documentation>
+				</annotation>
+			</enumeration>
+		</restriction>
+	</simpleType>
+
+	<complexType name="NodeDefinitionList">
+		<sequence>
+			<element name="Node" maxOccurs="unbounded" type="state:NodeDefinition"></element>
+		</sequence>
+	</complexType>
+
+	<complexType name="NodeDefinition">
+		<annotation>
+			<documentation>Definition of a Node in the state model
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="EntryConditions" type="state:ConditionList"
+				minOccurs="0" maxOccurs="unbounded">
+				<annotation>
+					<documentation>Conditions that must be satisfied to transition to
+						this node
+					</documentation>
+				</annotation>
+			</element>
+			<element name="EntryCommands" type="state:CommandList"
+				minOccurs="0" maxOccurs="unbounded">
+				<annotation>
+					<documentation>Commands to execute whenever this node is entered.
+					</documentation>
+				</annotation>
+			</element>
+			<choice minOccurs="0" maxOccurs="unbounded">
+				<element name="Transition" type="state:Transition">
+					<annotation>
+						<documentation>Transitions out of this Node</documentation>
+					</annotation>
+				</element>
+				<element name="Script" type="state:ScriptDefinition">
+					<annotation>
+						<documentation>Script generates a connected series of Nodes based
+							on input
+						</documentation>
+					</annotation>
+				</element>
+			</choice>
+		</sequence>
+		<attribute name="name" type="state:assemblerSymbol" use="required"></attribute>
+	</complexType>
+
+	<complexType name="ConditionList">
+		<annotation>
+			<documentation>List of conditions on entry to a Transition or Node
+			</documentation>
+		</annotation>
+		<choice minOccurs="0" maxOccurs="unbounded">
+			<element name="FlagCheck" type="state:FlagState"/>
+		</choice>
+	</complexType>
+
+	<complexType name="CommandList">
+		<annotation>
+			<documentation>List of commands on entry to a Transition or Node
+			</documentation>
+		</annotation>
+		<choice minOccurs="0" maxOccurs="unbounded">
+			<element name="ClearValue" type="state:assemblerSymbol">
+				<annotation>
+					<documentation>Clear the value in the named variable
+					</documentation>
+				</annotation>
+			</element>
+			<element name="ClearIndexedValue" type="state:IndexedValue">
+				<annotation>
+					<documentation>Clear the value at the given indexed location
+					</documentation>
+				</annotation>
+			</element>
+			<element name="StoreValue" type="state:StoreValue">
+				<annotation>
+					<documentation>Store the value</documentation>
+				</annotation>
+			</element>
+			<element name="SetFlag" type="state:FlagState">
+			</element>
+			<element name="Call" type="state:assemblerSymbol">
+				<annotation>
+					<documentation>Call the named method. Must be declared as a symbol
+						of type ROM.</documentation>
+				</annotation>
+			</element>
+		</choice>
+	</complexType>
+
+
+	<complexType name="FlagState">
+		<attribute name="variable" type="state:assemblerSymbol" use="required"></attribute>
+		<attribute name="flag" type="state:assemblerSymbol" use="required"></attribute>
+		<attribute name="value" type="boolean" use="required"></attribute>
+	</complexType>
+
+	<complexType name="StoreValue">
+			<attribute name="source" type="state:assemblerSymbol" use="optional">
+				<annotation>
+					<documentation>Location to copy from. Defaults to the machine input variable</documentation>
+				</annotation>
+			</attribute>
+			<attribute name="destination" type="state:assemblerSymbol" use="required">
+				<annotation>
+					<documentation>Location to copy to</documentation>
+				</annotation>
+			</attribute>
+			<attribute name="destinationIndexer" type="state:assemblerSymbol" use="optional">
+				<annotation>
+					<documentation>Optional indexer for the destination</documentation>
+				</annotation>
+			</attribute>
+	</complexType>
+
+	<complexType name="IndexedValue">
+		<attribute name="variable" type="state:assemblerSymbol" use="required"/>
+		<attribute name="indexer" type="state:assemblerSymbol" use="required"/>
+	</complexType>
+
+	<complexType name="Transition">
+		<annotation>
+			<documentation>A transition from a node or a point in a script
+			</documentation>
+		</annotation>
+		<sequence>
+			<element name="Conditions" type="state:ConditionList" minOccurs="0" maxOccurs="1">
+				<annotation>
+					<documentation>Conditions that must be satisfied to enter this
+						transition</documentation>
+				</annotation>
+			</element>
+			<element name="Commands" type="state:CommandList" minOccurs="0"	maxOccurs="1">
+				<annotation>
+					<documentation>Commands to execute whenever this transition is
+						executed
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="target" use="required" type="state:assemblerSymbol">
+			<annotation>
+				<documentation>Target node name</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="input" use="optional" type="normalizedString">
+			<annotation><documentation>Shorthand to specify the input to produce this transition</documentation></annotation>
+		</attribute>
+	</complexType>
+
+	<complexType name="ScriptDefinition">
+		<sequence>
+			<choice minOccurs="1" maxOccurs="unbounded">
+				<element name="GuardCondition" type="state:ConditionList">
+					<annotation><documentation>
+						Will add a precondition to the next node defined
+					</documentation></annotation>
+				</element>
+				<element name="Commands" type="state:CommandList">
+					<annotation><documentation>
+						Will add an entry command to the next node defined,
+						or if last in the list create an empty node with the
+						given commands. The generator will then squash this
+						empty node into a transition to the root node.
+					</documentation></annotation>
+				</element>
+				<element name="Literal" type="state:ScriptLiteral">
+					<annotation>
+						<documentation>Insert the nodes required to read the given literal
+						</documentation>
+					</annotation>
+				</element>
+				<element name="Choices" type="state:ScriptChoiceList">
+					<annotation>
+						<documentation>Insert the transitions to execute the given choice
+						</documentation>
+					</annotation>
+				</element>
+				<element name="Numbers" type="state:ScriptNumbers">
+					<annotation>
+						<documentation>Insert the nodes required to read numbers
+						</documentation>
+					</annotation>
+				</element>
+				<element name="SkipTo" type="state:ScriptChoiceList">
+					<annotation>
+						<documentation>Insert the nodes required to skip until and of the
+							given conditions are met</documentation>
+					</annotation>
+				</element>
+			</choice>
+		</sequence>
+		<attribute name="description" type="string" use="optional"></attribute>
+	</complexType>
+
+	<simpleType name="ScriptLiteral">
+		<annotation>
+			<documentation>Literal input for the state engine</documentation>
+		</annotation>
+		<restriction base="string"></restriction>
+	</simpleType>
+
+	<complexType name="ScriptChoiceList">
+		<sequence>
+			<element name="Choice" type="state:ScriptChoice" minOccurs="1"
+				maxOccurs="unbounded"></element>
+		</sequence>
+	</complexType>
+
+	<complexType name="ScriptChoice">
+		<sequence>
+			<element name="Conditions" type="state:ConditionList" minOccurs="0"/>
+			<element name="Commands" type="state:CommandList" minOccurs="0"
+				maxOccurs="1">
+				<annotation>
+					<documentation>Commands to execute on entering this transition
+					</documentation>
+				</annotation>
+			</element>
+		</sequence>
+		<attribute name="input" type="normalizedString" use="optional">
+					<annotation><documentation>Shorthand to specify the input to produce this transition</documentation></annotation>
+		</attribute>		
+		<attribute name="target" type="state:assemblerSymbol" use="optional">
+				<annotation>
+					<documentation>Node to go to from this transition.
+						If absent then
+						the transition will flow into the rest of the script.
+					</documentation>
+				</annotation>
+		</attribute>
+	</complexType>
+
+	<complexType name="ScriptNumbers">
+		<attribute name="min" type="unsignedByte" use="required">
+			<annotation>
+				<documentation>Minimum amount of numbers to expect</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="max" type="unsignedByte" use="required">
+			<annotation>
+				<documentation>Maximum amount of numbers to expect</documentation>
+			</annotation>
+		</attribute>
+		<attribute name="store" type="state:assemblerSymbol" use="optional">
+			<annotation>
+				<documentation>Name of a variable to store the numbers in.
+					If max&gt;min then a null terminated string will be used, otherwise
+					the requisite number of bytes.</documentation>
+			</annotation>
+		</attribute>
+	</complexType>
+
+	<complexType name="UnitTestList">
+		<sequence>
+			<element name="Test" minOccurs="0" maxOccurs="unbounded"
+				type="state:UnitTest" />
+		</sequence>
+	</complexType>
+
+	<complexType name="UnitTest">
+		<annotation>
+			<documentation>Define a unit test for the model</documentation>
+		</annotation>
+		<sequence>
+			<element name="Description" type="string" minOccurs="0"/>
+			<choice minOccurs="0" maxOccurs="unbounded">
+				<element name="Input" type="string"></element>
+				<element name="AssertEquals" type="state:AssertVariableValue"></element>
+				<element name="AssertFlag" type="state:FlagState"></element>
+			</choice>
+		</sequence>
+	</complexType>
+
+	<complexType name="AssertVariableValue">
+		<attribute name="variable" type="state:assemblerSymbol" use="required"></attribute>
+		<attribute name="string" type="string" use="optional"></attribute>
+		<attribute name="numbers" type="state:ListOfNumbers" use="optional"></attribute>
+	</complexType>
+
+	<simpleType name="ListOfNumbers">
+		<list itemType="integer"></list>
+	</simpleType>
+
+</schema>
