@@ -16,7 +16,15 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
     </developer>
   </developers>
   <scm>
-  	<url>scm:git:git://github.com:m0rjc/PICStateMachineGenerator.git</url>
+    <connection>
+     scm:git:git://github.com/m0rjc/PICStateMachineGenerator.git
+    </connection>
+    <developerConnection>
+     scm:git:ssh://git@github.com/m0rjc/PICStateMachineGenerator.git
+    </developerConnection>
+    <url>
+     https://github.com/m0rjc/PICStateMachineGenerator
+    </url>
   </scm>
   <name>State machine generator for PIC Microcontrollers</name>
   
