@@ -28,15 +28,13 @@ The builders are
 
 I have a working unit test simulating a model built using Java code.
 
-I am part way to implementing a reader for an XML definition file.
+I have a reader for an XML definition file.
+
+I am most of the way through implementing the PIC18 Assembler builder
 
 
 The Plan
 --------
-
-To make this more useful it would help if it could read a definition of the model and where and what to output 
-from a text file. Simplest to code would likely be XML. This is more machine editable than human editable. 
-Alternatively parse a simpler file with REGEX like expressions in it.
 
 Create an acceptance test:
 
