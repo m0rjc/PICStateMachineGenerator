@@ -16,7 +16,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class UnitTestGpsGeneratedModel
+public class TestGpsGenerateModel
 {
 	private Simulation m_simulation;
 	
@@ -24,7 +24,7 @@ public class UnitTestGpsGeneratedModel
 	public static void systemSetup() throws Exception
 	{
 		// Set up logging
-		InputStream in = UnitTestGpsGeneratedModel.class.getResourceAsStream("logging.properties");
+		InputStream in = TestGpsGenerateModel.class.getResourceAsStream("logging.properties");
 		if(in != null)
 		{
 			LogManager.getLogManager().readConfiguration(in);

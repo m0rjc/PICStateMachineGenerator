@@ -6,7 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import m0rjc.ax25.generator.model.Variable.Access;
 import m0rjc.ax25.generator.model.Variable.Ownership;
 import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
@@ -88,7 +87,7 @@ public class StateModel implements IModel
 	 */
 	public Variable createInternalAccessVariable(String name, int size)
 	{
-		Variable v = new Variable(name, Access.ACCESS_BANK, Ownership.INTERNAL, -1, size);
+		Variable v = new Variable(name, Ownership.INTERNAL, Variable.ACCESS_BANK, size);
 		addVariable(v);
 		return v;
 	}
@@ -116,7 +115,7 @@ public class StateModel implements IModel
 	 */
 	public Variable createGlobalAccessVariable(String name, int size)
 	{
-		Variable v = new Variable(name, Access.ACCESS_BANK, Ownership.GLOBAL, -1, size);
+		Variable v = new Variable(name, Ownership.GLOBAL, Variable.ACCESS_BANK, size);
 		addVariable(v);
 		return v;
 	}
@@ -132,7 +131,7 @@ public class StateModel implements IModel
 	 */
 	public Variable createGlobalPagedVariable(int page, String name, int size)
 	{
-		Variable v = new Variable(name, Access.PAGED_BANK, Ownership.GLOBAL, page, size);
+		Variable v = new Variable(name, Ownership.GLOBAL, page, size);
 		addVariable(v);
 		return v;
 	}
@@ -146,7 +145,7 @@ public class StateModel implements IModel
 	 */
 	public Variable createInternalPagedVariable(int page, String name, int size)
 	{
-		Variable v = new Variable(name, Access.PAGED_BANK, Ownership.INTERNAL, -1, size);
+		Variable v = new Variable(name, Ownership.INTERNAL, -1, size);
 		addVariable(v);
 		return v;
 	}

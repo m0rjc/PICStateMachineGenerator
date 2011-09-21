@@ -1,11 +1,9 @@
 package m0rjc.ax25.generator.xmlDefinitionReader;
 
 import junit.framework.Assert;
-
 import m0rjc.ax25.generator.model.CompositePrecondition;
 import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.Variable;
-import m0rjc.ax25.generator.model.Variable.Access;
 import m0rjc.ax25.generator.model.Variable.Ownership;
 import m0rjc.ax25.generator.model.VariableValuePrecondition;
 
@@ -17,7 +15,7 @@ import org.junit.runners.JUnit4;
 import org.xml.sax.SAXException;
 
 @RunWith(JUnit4.class)
-public class UnitTestInputSpecificationParser
+public class TestInputSpecificationParser
 {
 	@Rule
 	public ExpectedException expected = ExpectedException.none();
@@ -57,7 +55,7 @@ public class UnitTestInputSpecificationParser
 	public void testParseSpec_SingleNumber() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Access.ACCESS_BANK, Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
 		VariableValuePrecondition expected = VariableValuePrecondition.createEQ(v, 123);
 		Assert.assertEquals(expected, (VariableValuePrecondition)parseSpec(parser, v, "123"));		
 	}
@@ -66,7 +64,7 @@ public class UnitTestInputSpecificationParser
 	public void testParseSpec_SingleCharacter() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Access.ACCESS_BANK, Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
 		VariableValuePrecondition expected = VariableValuePrecondition.createEQ(v, '$');
 		Assert.assertEquals(expected, (VariableValuePrecondition)parseSpec(parser, v, "'$'"));		
 	}
@@ -75,7 +73,7 @@ public class UnitTestInputSpecificationParser
 	public void testParseSpec_Wildcard() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Access.ACCESS_BANK, Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
 		CompositePrecondition expected = (CompositePrecondition) Precondition.emptyCondition();
 		Assert.assertEquals(expected, (CompositePrecondition)parseSpec(parser, v, "*"));		
 	}
@@ -84,7 +82,7 @@ public class UnitTestInputSpecificationParser
 	public void testParseSpec_CharacterRange() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Access.ACCESS_BANK, Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
 		CompositePrecondition expected = (CompositePrecondition) Precondition.range(v, '0', '9');
 		Assert.assertEquals(expected, (CompositePrecondition)parseSpec(parser, v, "'0'-'9'"));		
 	}
@@ -93,7 +91,7 @@ public class UnitTestInputSpecificationParser
 	public void testParseSpec_NumberRange() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Access.ACCESS_BANK, Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
 		CompositePrecondition expected = (CompositePrecondition) Precondition.range(v, 0, 9);
 		Assert.assertEquals(expected, (CompositePrecondition)parseSpec(parser, v, "0-9"));		
 	}

@@ -3,7 +3,6 @@ package m0rjc.ax25.generator.xmlDefinitionReader;
 import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Variable;
-import m0rjc.ax25.generator.model.Variable.Access;
 import m0rjc.ax25.generator.model.Variable.Ownership;
 
 import org.xml.sax.Attributes;
@@ -80,11 +79,10 @@ class SymbolSaxHandler extends ChainedSaxHandler
 			return;
 		}
 
-		Variable.Access access = readAccess(loc);
 		int page = readPage(loc);
 		Variable.Ownership ownership = readOwnership(decl);
 
-		m_variable = new Variable(name, access, ownership, page, size);
+		m_variable = new Variable(name, ownership, page, size);
 		m_model.addVariable(m_variable);
 	}
 
@@ -126,26 +124,7 @@ class SymbolSaxHandler extends ChainedSaxHandler
 				throw new SAXException("Cannot decode RAM page " + loc + ".", e);
 			}
 		}
-		return -1;
-	}
-
-	/**
-	 * Read the state:SymbolLocation for a RAM based Variable
-	 * @param loc
-	 * @return
-	 * @throws SAXException 
-	 */
-	private Access readAccess(String loc) throws SAXException
-	{
-		if("accessram".equals(loc))
-		{
-			return Access.ACCESS_BANK;
-		}
-		if(loc.startsWith("page"))
-		{
-			return Access.PAGED_BANK;
-		}
-		throw new SAXException("Unrecognised symbol location: " + loc);
+		return Variable.ACCESS_BANK;
 	}
 
 	@Override

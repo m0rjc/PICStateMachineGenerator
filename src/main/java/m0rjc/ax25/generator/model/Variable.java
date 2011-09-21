@@ -10,21 +10,17 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
  */
 public class Variable
 {
-	public Variable(String name, Access access, Ownership ownership, int bank, int size)
+	/** Special value for access bank on PIC18 */
+	public static final int ACCESS_BANK = -1;
+	
+	public Variable(String name, Ownership ownership, int bank, int size)
 	{
 		m_name = name;
-		m_access = access;
 		m_bank = bank;
 		m_size = size;
 		m_ownership = ownership;
 	}
-	
-	public enum Access
-	{
-		ACCESS_BANK,
-		PAGED_BANK,
-	}
-	
+		
 	public enum Ownership
 	{
 		/** A variable that exists only within the generated module. */
@@ -80,7 +76,6 @@ public class Variable
 	}
 	
 	private String m_name;
-	private Access m_access;
 	private Ownership m_ownership;
 	private int m_bank;
 	private int m_size;
@@ -91,8 +86,6 @@ public class Variable
 	{
 		final int prime = 31;
 		int result = 1;
-		result = prime * result
-				+ ((m_access == null) ? 0 : m_access.hashCode());
 		result = prime * result + m_bank;
 		result = prime * result + ((m_flags == null) ? 0 : m_flags.hashCode());
 		result = prime * result + ((m_name == null) ? 0 : m_name.hashCode());
@@ -112,8 +105,6 @@ public class Variable
 		if (getClass() != obj.getClass())
 			return false;
 		Variable other = (Variable) obj;
-		if (m_access != other.m_access)
-			return false;
 		if (m_bank != other.m_bank)
 			return false;
 		if (m_flags == null) {
@@ -237,7 +228,25 @@ public class Variable
 	 */
 	public boolean isInRamPage(int page)
 	{
-		return (m_access == Access.ACCESS_BANK && page == -1) || (m_access == Access.PAGED_BANK && page == m_bank);
+		return page == m_bank;
+	}
+
+	/**
+	 * True if the variable is defined in access bank
+	 * @return
+	 */
+	public boolean isAccess()
+	{
+		return m_bank == ACCESS_BANK;
+	}
+
+	/**
+	 * Bank for this variable or -1 for ACCESS BANK.
+	 * @return
+	 */
+	public int getBank()
+	{
+		return m_bank;
 	}
 	
 }
