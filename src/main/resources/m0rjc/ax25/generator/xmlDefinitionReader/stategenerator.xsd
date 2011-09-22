@@ -34,7 +34,7 @@
 				</key>
 			</element>
 			<element name="UnitTests" type="state:UnitTestList"></element>
-			<!-- element name="Output" type="state:OutputList"></element> -->
+			<element name="Output" type="state:OutputList"></element>
 		</sequence>
 	</complexType>
 
@@ -505,4 +505,60 @@
 		<list itemType="integer"></list>
 	</simpleType>
 
+	<complexType name="OutputList">
+        <annotation>
+        	<documentation>Outputs to generate from the model</documentation>
+        </annotation>
+        <choice minOccurs="0" maxOccurs="unbounded">
+			<element name="Pic18" type="state:PicOutput"/>
+		</choice>
+	</complexType>
+
+	<complexType name="PicOutput">
+        <annotation>
+        	<documentation>Assembly language output for Microchip MPASM</documentation>
+        </annotation>
+		<sequence>
+			<element name="Include" type="normalizedString" minOccurs="0" maxOccurs="unbounded">
+		        <annotation>
+		        	<documentation>
+		        	A file to be #included in the generated module.
+		        	You'll need to at least include the microcontroller include file for special function registers
+		        	</documentation>
+		        </annotation>
+			</element>
+			<element name="ReturnLine" type="string" minOccurs="0" maxOccurs="unbounded">
+		        <annotation>
+		        	<documentation>
+		        		A line to be used to return control from the state machine step function.
+		        		Default is "RETURN". Another example may be "RETFIE" or "GOTO _exitIsr"
+		        	</documentation>
+		        </annotation>
+			</element>
+		</sequence>
+		<attribute name="processor" type="normalizedString" use="optional">
+		    <annotation>
+		       	<documentation>
+		       		Processor name as given in the LIST directive. For example P18F14K50.
+		       		If absent then no LIST directive will be generated.
+		       	</documentation>
+		    </annotation>
+		</attribute>
+		<attribute name="outputBaseName" type="normalizedString" use="optional">
+		    <annotation>
+		       	<documentation>
+		       		Optional base name for the output files. For example base name "gps"
+		       		will result in "gps.asm", "gps.inc", "gps.h".
+		       		Defaults to the model name.
+		       	</documentation>
+		    </annotation>
+		</attribute>
+		<attribute name="largeRomModel" type="boolean" use="optional" default="false">
+		    <annotation>
+		       	<documentation>
+		       		If true then 3 byte pointers will be used, otherwise 2 bytes.
+		       	</documentation>
+		    </annotation>
+		</attribute>
+	</complexType>
 </schema>

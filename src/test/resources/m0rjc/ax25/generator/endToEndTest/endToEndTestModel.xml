@@ -120,4 +120,9 @@
 			<AssertFlag flag="FLAG_GPS_NEW_POSITION" variable="gpsFlags" value="true" />
 		</Test>
 	</UnitTests>
+	<Output>
+		<Pic18 processor="18F14K50">
+			<Include>p18f14k50.inc</Include>
+		</Pic18>
+	</Output>
 </StateGeneratorRun>

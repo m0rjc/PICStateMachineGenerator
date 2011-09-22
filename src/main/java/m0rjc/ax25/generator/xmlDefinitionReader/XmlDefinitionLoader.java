@@ -16,7 +16,7 @@ import org.xml.sax.SAXException;
 
 public class XmlDefinitionLoader
 {
-	public void loadDefinition(InputStream in) throws SAXException, IOException
+	public void loadAndProcessDefinition(InputStream in) throws SAXException, IOException
 	{
 		Schema schema = getSchema();
 		Validator validator = schema.newValidator();

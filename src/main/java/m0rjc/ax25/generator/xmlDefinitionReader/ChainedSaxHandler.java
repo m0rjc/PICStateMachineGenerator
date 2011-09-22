@@ -266,6 +266,25 @@ class ChainedSaxHandler extends DefaultHandler
 		}
 	}
 
+	/**
+	 * Read a boolean. Use a default if not provided
+	 * @param attr
+	 * @param qName
+	 * @return
+	 * @throws SAXException
+	 */
+	protected final boolean getBoolean(Attributes attr, String qName, boolean fallback) throws SAXException
+	{
+		String value = attr.getValue(qName);
+		if(value != null)
+		{
+			value = value.toLowerCase();
+			if("true".equals(value) || "yes".equals(value) || "1".equals(value)) return true;
+			if("false".equals(value) || "no".equals(value) || "0".equals(value)) return false;
+			throw new SAXException("Value " + qName + "=" + value + " was not recognised as an XML boolean");
+		}
+		return fallback;
+	}
 	
 	/**
 	 * Read a boolean. If not provided then throw an exception

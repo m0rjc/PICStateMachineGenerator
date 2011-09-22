@@ -8,12 +8,17 @@ import m0rjc.ax25.generator.model.Variable;
  */
 public interface IModel
 {
+	/** The name given to the model. Must be a short MPASM compatible name */
+	String getModelName();
+	
 	/** Return the initial state - root node */
-	public abstract Node getInitialState();
+	Node getInitialState();
 
 	/** Variable lookup */
-	public Variable getVariable(String name);
+	Variable getVariable(String name);
 	
 	/** Return the node with the given name */
-	public abstract Node getNode(String name);	
+	Node getNode(String name);	
+	
+	
 }

@@ -38,6 +38,20 @@
 	            <artifactId>maven-site-plugin</artifactId>
 	            <version>3.0-beta-3</version>
 	        </plugin>
+	        <plugin>
+	        <groupId>org.apache.maven.plugins</groupId>
+	        <artifactId>maven-jar-plugin</artifactId>
+	        <version>2.3.2</version>
+	        <configuration>
+				<archive>
+					<manifest>
+						<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+						<addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+						<mainClass>m0rjc.ax25.generator.RunGenerator</mainClass>
+					</manifest>
+				</archive>
+	        </configuration>
+        </plugin>
 		</plugins>
 	</build>
 
@@ -62,6 +76,21 @@
 					</reportSet>
 				</reportSets>
 			</plugin>
+			<plugin>
+        		<artifactId>maven-javadoc-plugin</artifactId>
+      		</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-report-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jxr-plugin</artifactId>
+			</plugin>
+			<plugin>
+		        <groupId>org.codehaus.mojo</groupId>
+        		<artifactId>taglist-maven-plugin</artifactId>
+      		</plugin>
 		</plugins>
 	</reporting>
 

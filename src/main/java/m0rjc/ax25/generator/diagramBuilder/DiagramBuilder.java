@@ -8,6 +8,7 @@ import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
+import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
@@ -39,6 +40,10 @@ public class DiagramBuilder implements IModelVisitor
 		output.println("        rankdir=LR;");
 	}
 	
+	@Override
+	public void visitStartModel(IModel model)
+	{
+	}
 
 	/**
 	 * @see m0rjc.ax25.generator.visitor.IModelVisitor#startNode(m0rjc.ax25.generator.model.Node)

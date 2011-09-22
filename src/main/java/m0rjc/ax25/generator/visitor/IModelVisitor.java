@@ -14,6 +14,12 @@ import m0rjc.ax25.generator.model.Variable;
 public interface IModelVisitor
 {
 	/**
+	 * Start of visiting a model
+	 * @param model
+	 */
+	void visitStartModel(IModel model);
+	
+	/**
 	 * Declare an external symbol
 	 * @param name
 	 */

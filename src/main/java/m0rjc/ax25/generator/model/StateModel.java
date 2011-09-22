@@ -49,6 +49,12 @@ public class StateModel implements IModel
 		m_modelName = name;
 	}
 	
+	/** The name given to the model. Must be a short MPASM compatible name */
+	public String getModelName()
+	{
+		return m_modelName;
+	}
+	
 	/**
 	 * Create a name for a state
 	 */
@@ -234,6 +240,8 @@ public class StateModel implements IModel
 	 */
 	public void accept(IModelVisitor visitor)
 	{
+		visitor.visitStartModel(this);
+		
 		// EXTERN section
 		for(RomLocation r : m_externalRom)
 		{

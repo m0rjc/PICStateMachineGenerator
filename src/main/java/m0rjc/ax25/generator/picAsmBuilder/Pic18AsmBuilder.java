@@ -1,5 +1,7 @@
 package m0rjc.ax25.generator.picAsmBuilder;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -9,6 +11,7 @@ import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
 import m0rjc.ax25.generator.model.Variable.Ownership;
+import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
@@ -19,16 +22,36 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
 public class Pic18AsmBuilder implements IModelVisitor
 {
 	private Logger m_log = Logger.getLogger(Pic18AsmBuilder.class.getName());
+	
+	/** Writer for the assembly .asm file */
 	private PicAssemblyWriter m_assembler;
+	
+	/** Does this model use banked variables? */
 	private boolean m_hasBankedVariables;
+	
+	/** Have we yet output our own GLOBALs */
 	private boolean m_hasOutputEntryPointGlobal;
+	
+	/** Variable that holds the state pointer */
 	private Variable m_statePointer;
+	
+	/** An optimisation. Can the last transition of the node fall through? */
 	private boolean m_lastTransitionCanFallThrough;
+	
+	/** Name of the model's initial state */
 	private String m_rootStateName;
+	
+	/** Number of RAM banks found in the model. If 1 or less then we don't need to be so paranoid about BANKSEL */
 	private int m_numberOfBanksUsed = 0;
 	
+	/** Include files */
+	private List<String> m_includes = new ArrayList<String>();
+	
+	/** Processor for the list directive */
+	private String m_processor;
+	
 	/** Code to execute to exit from the step method */
-	private List<String> m_returnCode;
+	private List<String> m_returnCode = new ArrayList<String>();
 	
 	/** True to generate a large ROM model */
 	private boolean m_largeRomModel;
@@ -39,8 +62,100 @@ public class Pic18AsmBuilder implements IModelVisitor
 	/** Counter for creating transition label names */
 	private int m_transitionCounter = 0;
 	
+	/** Model name, read from the model itself */
 	private String m_modelName;
 	
+	/** Base name for output files. Defaults to the model name. */
+	private String m_fileBaseName;
+	
+	/** Processor name for the LIST directive. If null then no LIST directive will be output. */
+	public String getProcessor()
+	{
+		return m_processor;
+	}
+
+	/** Processor name for the LIST directive. If null then no LIST directive will be output. */
+	public void setProcessor(String processor)
+	{
+		m_processor = processor;
+	}
+
+	/** If true then 3 byte pointers will be used. */
+	public boolean isLargeRomModel()
+	{
+		return m_largeRomModel;
+	}
+
+	/** If true then 3 byte pointers will be used. */
+	public void setLargeRomModel(boolean largeRomModel)
+	{
+		m_largeRomModel = largeRomModel;
+	}
+
+	/** 
+	 * Base name for output files. Defaults to the model name.
+	 * For example if the base name is "gps" then output files
+	 * would be "gps.asm", "gps.inc", "gps.h"
+	 */
+	public String getFileBaseName()
+	{
+		return m_fileBaseName;
+	}
+
+	/** 
+	 * Base name for output files. Defaults to the model name.
+	 * For example if the base name is "gps" then output files
+	 * would be "gps.asm", "gps.inc", "gps.h"
+	 */
+	public void setFileBaseName(String fileBaseName)
+	{
+		m_fileBaseName = fileBaseName;
+	}
+
+	/**
+	 * Add the name of a file to #include in the assembler module.
+	 * @param includeName
+	 */
+	public void addInclude(String includeName)
+	{
+		m_includes.add(includeName);
+	}
+	
+	/**
+	 * Add a line to the code that is needed to return.
+	 * @param line
+	 */
+	public void addReturnLine(String line)
+	{
+		m_returnCode.add(line);
+	}
+	
+	@Override
+	public void visitStartModel(IModel model)
+	{
+		m_modelName = model.getModelName();
+		m_rootStateName = model.getInitialState().getStateName();
+		
+		if(m_fileBaseName == null)
+		{
+			m_fileBaseName = m_modelName;
+		}
+		
+		m_assembler = new PicAssemblyWriter(m_fileBaseName + ".asm");
+		
+		if(m_processor != null)
+		{
+			m_assembler.opCode("list", "p=" + m_processor);
+		}
+		
+		for(String include : m_includes)
+		{
+			m_assembler.write("#include \"" + include + "\"\n");
+		}
+		
+		m_assembler.blankLine();
+	}
+
 	/**
 	 * Declare an external symbol
 	 * @param name
@@ -92,6 +207,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 
 		if(modelDefinesAccessVariables)
 		{
+			m_assembler.blankLine();
 			m_assembler.writeSection(m_modelName + "Acs", "UDATA_ACS");
 			if(m_statePointer == null)
 			{
@@ -238,7 +354,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 
 	/**
 	 * Visit a Transition on the current Node
-	 * @param rangeTransition
+	 * @param transition transition visiting, or NULL when called by this code for the fallback state.
 	 */
 	public void visitTransition(Transition transition)
 	{
@@ -318,7 +434,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 		if(source.getSize() > 1) m_log.warning("Indexed variable handling code currently only supports 8 bit values. Variable: " + source.getName());
 
 		m_assembler.writeComment(String.format(" Command %s[%s] := %s", output.getName(), indexer.getName(), source.getName()));
-		m_assembler.opCode("LFSR0", output.getName());
+		m_assembler.opCode("LFSR", "FSR0", output.getName());
 		banksel(indexer);
 		m_assembler.opCode("MOVF", indexer.getName(), "W", access(indexer));
 		m_assembler.opCode("MOVFF", source.getName(), "PLUSW0");
@@ -349,7 +465,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	public void visitCommandClearIndexedVariable(Variable variable, Variable indexer)
 	{
 		m_assembler.writeComment(String.format(" Command %s[%s] := 0", variable.getName(), indexer.getName()));
-		m_assembler.opCode("LFSR0", variable.getName());
+		m_assembler.opCode("LFSR", "FSR0", variable.getName());
 		banksel(indexer);
 		m_assembler.opCode("MOVF", indexer.getName(), "W", access(indexer));
 		m_assembler.opCode("CLRF", "PLUSW0", "A");
@@ -415,6 +531,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	{
 		if(m_lastTransitionCanFallThrough)
 		{
+			visitTransition(null);
 			visitTransitionGoToNode(m_rootStateName);
 		}
 	}
@@ -425,7 +542,15 @@ public class Pic18AsmBuilder implements IModelVisitor
 	@Override
 	public void finished()
 	{
+		m_assembler.blankLine();
 		m_assembler.writeEndMarker();
+		try
+		{
+			m_assembler.close();
+		}
+		catch (IOException e)
+		{
+		}
 	}
 
 	/**
@@ -434,6 +559,8 @@ public class Pic18AsmBuilder implements IModelVisitor
 	 */
 	private void gotoPointer(Variable pointer)
 	{
+		banksel(pointer);
+		
 		if(m_largeRomModel)
 		{
 			m_assembler.opCode("MOVFF", offset(pointer, 2), "PCLATU");
@@ -444,7 +571,8 @@ public class Pic18AsmBuilder implements IModelVisitor
 		}
 		
 		m_assembler.opCode("MOVFF", offset(pointer, 1), "PCLATH");
-		m_assembler.opCode("MOVFF", offset(pointer, 0), "PCL");
+		m_assembler.opCode("MOVF", pointer.getName(), "W", access(pointer));
+		m_assembler.opCode("MOVWF", "PCL", "A");
 	}
 	
 	/**
@@ -503,13 +631,13 @@ public class Pic18AsmBuilder implements IModelVisitor
 	}
 
 	/**
-	 * Return the MPASM access/bank flag (A or B) for the variable
+	 * Return the MPASM access/bank flag (A or nothing) for the variable
 	 * @param v
 	 * @return
 	 */
 	private String access(Variable v)
 	{
-		return v.isAccess() ? "A" : "B";
+		return v.isAccess() ? "A" : null;
 	}
 	
 	/**

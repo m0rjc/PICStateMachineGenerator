@@ -4,6 +4,7 @@ import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
+import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
@@ -26,6 +27,11 @@ public class SimulatorBuilder implements IModelVisitor
 	public Simulation getSimulation()
 	{
 		return m_simulation;
+	}
+	
+	@Override
+	public void visitStartModel(IModel model)
+	{
 	}
 
 	/**

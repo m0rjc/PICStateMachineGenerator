@@ -35,6 +35,6 @@ public class TestLoadModel
 	{
 		
 		InputStream in = getClass().getResourceAsStream("endToEndTestModel.xml");
-		new XmlDefinitionLoader().loadDefinition(in);
+		new XmlDefinitionLoader().loadAndProcessDefinition(in);
 	}
 }

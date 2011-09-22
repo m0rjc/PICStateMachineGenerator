@@ -28,6 +28,12 @@ class DefinitionSaxHandler extends ChainedSaxHandler
 			setChild(m_testHandler);
 			m_testHandler.startElement(uri, localName, qName, attributes);
 		}
+		else if("Output".equals(localName))
+		{
+			OutputListSaxHandler handler = new OutputListSaxHandler(m_modelHandler.getModel());
+			setChild(handler);
+			handler.startElement(uri, localName, qName, attributes);
+		}
 	}
 	
 }
