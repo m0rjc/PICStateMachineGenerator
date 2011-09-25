@@ -30,7 +30,7 @@ I have a working unit test simulating a model built using Java code.
 
 I have a reader for an XML definition file.
 
-I am most of the way through implementing the PIC18 Assembler builder
+I have what looks like a working PIC18 Assembler builder. It needs testing.
 
 
 The Plan
@@ -41,4 +41,6 @@ Create an acceptance test:
 * Define a State Model in an XML file
 * Combine this with some support code and program it onto a PIC
 * Write JUnit tests which interact with the PIC and the running state model over the serial port.
+
+Create at least a simple UI to run files. Maybe one day a UI to edit them.
 
