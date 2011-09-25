@@ -303,7 +303,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 			
 			if(!m_hasBankedVariables)
 			{
-				m_log.log(Level.INFO, "The generated module has banked variables. Please configure the linker.");
+				m_log.log(Level.WARNING, "The generated module has banked variables. Please configure the linker.");
 				m_hasBankedVariables = true;
 			}
 		}		
