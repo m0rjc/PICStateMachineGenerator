@@ -10,6 +10,7 @@ import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
 import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
+import m0rjc.ax25.generator.visitor.INode;
 
 /**
  * Output a Graphviz diagram file from the model
@@ -49,7 +50,7 @@ public class DiagramBuilder implements IModelVisitor
 	 * @see m0rjc.ax25.generator.visitor.IModelVisitor#startNode(m0rjc.ax25.generator.model.Node)
 	 */
 	@Override
-	public void startNode(Node node)
+	public void startNode(INode node)
 	{
 		m_currentNode = node.getStateName();
 		if(m_startNodeDef == null)
@@ -69,7 +70,7 @@ public class DiagramBuilder implements IModelVisitor
 	/**
 	 * @param node
 	 */
-	private void renderStartNode(Node node)
+	private void renderStartNode(INode node)
 	{
 		m_startNodeDef = String.format("%s;", node.getStateName());
 	}
@@ -77,7 +78,7 @@ public class DiagramBuilder implements IModelVisitor
 	/**
 	 * @param node
 	 */
-	private void renderEndNode(Node node)
+	private void renderEndNode(INode node)
 	{
 		m_endNodeDefs.add(node.getStateName() + ";");
 	}
@@ -85,7 +86,7 @@ public class DiagramBuilder implements IModelVisitor
 	/**
 	 * @param node
 	 */
-	private void renderNode(Node node)
+	private void renderNode(INode node)
 	{
 		m_nodeDefs.add(node.getStateName() + ";");
 	}
@@ -151,13 +152,23 @@ public class DiagramBuilder implements IModelVisitor
 
 
 	@Override
-	public void visitTransitionGoToNode(String stateName)
+	public void visitTransitionGoToNode(INode node)
 	{
 		// Nothing to do
 	}
 
-	
-	
+	@Override
+	public void startSharedEntryCode(INode node)
+	{
+		// Nothing to do
+	}
+
+	@Override
+	public void visitTransitionGoToSharedEntryCode(INode node)
+	{
+		// Nothing to do
+	}
+
 	@Override
 	public void visitCommandCopyVariableToIndexedVariable(Variable source,
 			Variable output, Variable indexer)

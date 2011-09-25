@@ -5,7 +5,6 @@ package m0rjc.ax25.generator.visitor;
  */
 public interface INode
 {
-
 	/**
 	 * Get the name of this state
 	 */
@@ -17,5 +16,4 @@ public interface INode
 	 * having executed any entry code. Guard conditions don't make sense.
 	 */
 	boolean hasTransitions();
-
 }

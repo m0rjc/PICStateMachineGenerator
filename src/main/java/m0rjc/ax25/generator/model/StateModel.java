@@ -235,6 +235,15 @@ public class StateModel implements IModel
 	}
 	
 	/**
+	 * Perform any optimisation of the now complete model.
+	 */
+	public void optimiseModel()
+	{
+		// Work out which nodes should use shared entry code
+		m_rootNode.setSharedEntryCodeOnMultipleEntryNodes(new HashSet<String>());
+	}
+	
+	/**
 	 * Visit the model
 	 * @param visitor
 	 */

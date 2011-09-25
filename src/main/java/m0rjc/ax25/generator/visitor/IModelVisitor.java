@@ -62,6 +62,13 @@ public interface IModelVisitor
 	 * The builder may wish to output any boilerplate code here.
 	 */
 	void visitStartCode();
+
+	/**
+	 * Start rendering commands to run on entering the node at the end of a state transition.
+	 * Will be followed by visitCommand* followed by a visitTransitionGoToNode
+	 * @param node
+	 */
+	void startSharedEntryCode(INode node);
 	
 	/**
 	 * Start a Node.
@@ -71,7 +78,7 @@ public interface IModelVisitor
 	 * The first node to be started is the root node.
 	 * @param node
 	 */
-	void startNode(Node node);
+	void startNode(INode node);
 
 	/**
 	 * Visit a Transition on the current Node
@@ -112,8 +119,11 @@ public interface IModelVisitor
 	/** Encode a CALL to the given method */
 	void visitCommandMethodCall(RomLocation method);
 	
+	/** Encode a "Go to named node" using shared entry code. */
+	void visitTransitionGoToSharedEntryCode(INode node);
+	
 	/** Encode a "Go to named node and return control" in the transition */
-	void visitTransitionGoToNode(String stateName);
+	void visitTransitionGoToNode(INode node);
 	
 	/**
 	 * End of visiting a Node

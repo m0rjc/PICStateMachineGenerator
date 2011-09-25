@@ -1,6 +1,7 @@
 package m0rjc.ax25.generator.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -21,6 +22,9 @@ public class Node implements INode
 	
 	/** Code to be run on entry to the state */
 	private List<Command> m_entryCode = new ArrayList<Command>();
+
+	/** Does this node use shared entry code? */
+	private boolean m_useSharedEntryCode;
 	
 	/** 
 	 * Transitions out of this state.
@@ -358,19 +362,75 @@ public class Node implements INode
 	{
 		if(seenNodes.add(getStateName()))
 		{
+			if(isUseSharedEntryCode())
+			{
+				renderSharedEntryCode(visitor);
+			}
+			
 			visitor.startNode(this);
 			for(Transition t : m_transitions)
 			{
+				t.accept(visitor, m_model);
+			}
+			if(isFallbackTransitionNeeded())
+			{
+				Transition t = new Transition();
+				t.goTo(m_model.getInitialState());
 				t.accept(visitor, m_model);
 			}
 			visitor.endNode(this);
 			
 			for(Transition t : m_transitions)
 			{
-				Node n = t.getNode(m_model);
-				n.accept(seenNodes, visitor);
+				if(!t.isOptimiseOutTargetNode(m_model))
+				{
+					Node n = t.getNode(m_model);
+					n.accept(seenNodes, visitor);
+				}
 			}
+			
 		}
+	}
+
+	/**
+	 * Render the code to switch to this node as part of a transition.
+	 * @param visitor
+	 * @param ignoreTargetNodeEntry true if this transition must ignore the node's entry code.
+	 */
+	void renderGoToNode(IModelVisitor visitor, boolean ignoreTargetNodeEntry)
+	{
+		if(ignoreTargetNodeEntry)
+		{
+			visitor.visitTransitionGoToNode(this);
+		}
+		else if(isUseSharedEntryCode())
+		{
+			visitor.visitTransitionGoToSharedEntryCode(this);
+		}
+		else
+		{
+			for(Command c : getEntryCommands())
+			{
+				c.accept(visitor);
+			}
+			visitor.visitTransitionGoToNode(this);
+		}
+	}
+
+	
+	/**
+	 * Render the shared entry code for the node.
+	 * This is the code that is GOTO by any transition to enter this node.
+	 * The exception is if the transition is marked {@link Transition#ignoreTargetNodeEntry()}.
+	 */
+	private void renderSharedEntryCode(IModelVisitor visitor)
+	{
+		visitor.startSharedEntryCode(this);
+		for(Command c : m_entryCode)
+		{
+			c.accept(visitor);
+		}
+		visitor.visitTransitionGoToNode(this);
 	}
 
 	/** Return the preconditions for entry to this node */
@@ -384,4 +444,78 @@ public class Node implements INode
 	{
 		return m_entryCode;
 	}
+
+	/**
+	 * Does the assembler need to create code for a fallback position, should
+	 * none of the transitions for this node be satisfied?
+	 * 
+	 */
+	private boolean isFallbackTransitionNeeded()
+	{
+		// Initial simple implementation just looks for wildcard transitions.
+		// If any transition accepts all inputs then there is no need for the fallback.
+		for(Transition t : m_transitions)
+		{
+			if(t.acceptsAllInputs())
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * Does this node use shared entry code?
+	 */
+	public boolean isUseSharedEntryCode()
+	{
+		return m_useSharedEntryCode;
+	}
+
+	/**
+	 * Indicate that this node should use shared entry code.
+	 */
+	public void setUseSharedEntryCode()
+	{
+		m_useSharedEntryCode = true;
+	}
+
+	/**
+	 * Work through the tree setting all nodes with multiple entrants to "use shared entry code"
+	 * @param seenNodes Set of nodes that have been visited
+	 * @param seenEntries Set of node entry names that have been seen without {@link Transition#ignoreTargetNodeEntry()}
+	 */
+	public void setSharedEntryCodeOnMultipleEntryNodes(HashSet<String> seenEntries)
+	{
+		for(Transition t : m_transitions)
+		{
+			// Don't count self transitions as they use shorter code
+			String targetName = t.getTargetNodeName();
+			if(targetName != getStateName())
+			{
+				Node targetNode = m_model.getNode(targetName);
+				if(targetNode != null)
+				{
+					if(!seenEntries.add(targetName))
+					{
+						targetNode.setUseSharedEntryCode();
+					}
+					else
+					{
+						targetNode.setSharedEntryCodeOnMultipleEntryNodes(seenEntries);
+					}
+				}
+			}
+		}
+		
+		if(isFallbackTransitionNeeded())
+		{
+			Node rootNode = m_model.getInitialState();
+			if(!seenEntries.add(rootNode.getStateName()))
+			{
+				rootNode.setUseSharedEntryCode();
+			}
+		}
+	}
+
 }

@@ -46,7 +46,9 @@ public class GenerateGpsStateModel
 	{
 		StateModel model = new StateModel("gps");
 
-		model.setInputVariable(model.createGlobalAccessVariable(VARIABLE_INPUT, 1));
+		Variable input = model.createGlobalAccessVariable(VARIABLE_INPUT, 1);
+		
+		model.setInputVariable(input);
 		model.createGlobalPagedVariable(STATE_VARIABLE_PAGE, VARIABLE_GPS_TIME, 6);
 		model.createGlobalPagedVariable(STATE_VARIABLE_PAGE, VARIABLE_GPS_QUALITY, 1);
 		model.createGlobalPagedVariable(STATE_VARIABLE_PAGE, VARIABLE_GPS_LONGITUDE_DEGMIN, 5);
@@ -60,7 +62,8 @@ public class GenerateGpsStateModel
 			.addFlag(GPS_FLAG_GPS_EAST);
 		
 		Node initial = model.getInitialState();
-		Node dollar = initial.addString("$");
+		Node dollar = model.createNamedNode("dollar");
+		initial.addTransition(new Transition().when(Precondition.equals(input, '$')).goTo(dollar));
 		
 		buildGpGGA(model, dollar);
 		return model;

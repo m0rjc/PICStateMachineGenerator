@@ -163,22 +163,27 @@ public class Transition
 			c.accept(visitor);
 		}
 		
-		if(!m_ignoreTargetNodeEntry)
+		if(!isOptimiseOutTargetNode(model))
 		{
-			for(Command c : node.getEntryCommands())
-			{
-				c.accept(visitor);
-			}
-		}
-
-		if(node.hasTransitions())
-		{
-			visitor.visitTransitionGoToNode(node.getStateName());
+			node.renderGoToNode(visitor, m_ignoreTargetNodeEntry);
 		}
 		else // It's an End State, so reset
 		{
-			visitor.visitTransitionGoToNode(model.getInitialState().getStateName());
+			model.getInitialState().renderGoToNode(visitor, m_ignoreTargetNodeEntry);
 		}
+	}
+
+	/**
+	 * Should we optimise out the target node, instead mapping it to the root node?
+	 * @param model
+	 * @return
+	 */
+	public boolean isOptimiseOutTargetNode(IModel model)
+	{
+		Node node = getNode(model);
+		// A node with entry commands and without shared entry code will have its
+		// entry commands included in the incoming transition code.
+		return !node.hasTransitions() && !node.isUseSharedEntryCode();
 	}
 	
 	/**
@@ -205,5 +210,13 @@ public class Transition
 		m_ignoreTargetNodeEntry = true;
 		return this;
 	}
-	
+
+	/**
+	 * Does this transition accept any input?
+	 * @return
+	 */
+	public boolean acceptsAllInputs()
+	{
+		return m_preconditions.isEmpty();
+	}
 }

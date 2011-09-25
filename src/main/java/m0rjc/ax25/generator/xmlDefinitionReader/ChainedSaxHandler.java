@@ -65,6 +65,15 @@ class ChainedSaxHandler extends DefaultHandler
 		m_parent = parent;
 	}
 	
+	/**
+	 * Handle the SAX start element event.
+	 * If there is child handler then it will be invoked, otherwise the
+	 * {@link #onStartElement(String, String, String, Attributes)} method will be called.
+	 * 
+	 * This method must be called on the child whenever a new child is set up in order to
+	 * allow it to save the {@link #m_outerElementName} so knowing when to return control
+	 * to the parent.
+	 */
 	@Override
 	public final void startElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException
@@ -88,7 +97,10 @@ class ChainedSaxHandler extends DefaultHandler
 	}
 
 	/**
-	 * Handle the start element event from DefaultHandler
+	 * Handle the start element event from DefaultHandler.
+	 * 
+	 * @see #isHandlingOuterElement()
+	 * 
 	 * @param uri
 	 * @param localName
 	 * @param qName
@@ -99,6 +111,9 @@ class ChainedSaxHandler extends DefaultHandler
 	{
 	}
 
+	/**
+	 * If {@link #isReadingText()} 
+	 */
 	@Override
 	public final void characters(char[] ch, int start, int length)
 			throws SAXException
@@ -186,6 +201,10 @@ class ChainedSaxHandler extends DefaultHandler
 		return m_outerElementName;
 	}
 	
+	/**
+	 * Set the handler to accept {@link #characters(char[], int, int)} events and store
+	 * the text in a buffer. The buffer is cleared by this method.
+	 */
 	protected void startReadingText()
 	{
 		if(m_textBuffer != null)
@@ -213,7 +232,9 @@ class ChainedSaxHandler extends DefaultHandler
 
 	/**
 	 * Is text currently being read?
-	 * @return
+	 * To start reading text call {@link #startReadingText()}.
+	 * To stop reading text and retrieve the value call {@link #finishReadingText()}.
+	 * Text is read by the {@link #characters(char[], int, int)} SAX event.
 	 */
 	protected final boolean isReadingText()
 	{

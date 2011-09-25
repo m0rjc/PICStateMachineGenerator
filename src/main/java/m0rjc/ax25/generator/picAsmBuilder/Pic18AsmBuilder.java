@@ -13,6 +13,7 @@ import m0rjc.ax25.generator.model.Variable;
 import m0rjc.ax25.generator.model.Variable.Ownership;
 import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
+import m0rjc.ax25.generator.visitor.INode;
 
 /**
  * Build assembly source code for the PIC18
@@ -35,11 +36,8 @@ public class Pic18AsmBuilder implements IModelVisitor
 	/** Variable that holds the state pointer */
 	private Variable m_statePointer;
 	
-	/** An optimisation. Can the last transition of the node fall through? */
-	private boolean m_lastTransitionCanFallThrough;
-	
 	/** Name of the model's initial state */
-	private String m_rootStateName;
+	private INode m_rootState;
 	
 	/** Number of RAM banks found in the model. If 1 or less then we don't need to be so paranoid about BANKSEL */
 	private int m_numberOfBanksUsed = 0;
@@ -67,6 +65,12 @@ public class Pic18AsmBuilder implements IModelVisitor
 	
 	/** Base name for output files. Defaults to the model name. */
 	private String m_fileBaseName;
+	
+	/**
+	 * Name of the current node. Used to optimise out code that would switch from
+	 * current node to current node with no effect.
+	 */
+	private String m_currentNodeName;
 	
 	/** Processor name for the LIST directive. If null then no LIST directive will be output. */
 	public String getProcessor()
@@ -134,7 +138,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	public void visitStartModel(IModel model)
 	{
 		m_modelName = model.getModelName();
-		m_rootStateName = model.getInitialState().getStateName();
+		m_rootState = model.getInitialState();
 		
 		if(m_fileBaseName == null)
 		{
@@ -236,6 +240,27 @@ public class Pic18AsmBuilder implements IModelVisitor
 	}
 
 	/**
+	 * Name for the entry code for the given node.
+	 * @param nodeName
+	 * @return
+	 */
+	private String getNodeEntryLabel(String nodeName)
+	{
+		return "enter_" + nodeName;
+	}
+	
+	/**
+	 * The name to use for the label for the step handling code
+	 * for a node.
+	 * @param nodeName the name of the node.
+	 * @return the name of the step label
+	 */
+	private String getNodeStepLabel(String nodeName)
+	{
+		return "step_" + nodeName;
+	}
+	
+	/**
 	 * Create a variable definition
 	 * @param name
 	 * @param size
@@ -313,7 +338,8 @@ public class Pic18AsmBuilder implements IModelVisitor
 		m_assembler.endBlockComment();
 		
 		m_assembler.writeLabel(getInitMethodName());
-		setPointer(m_statePointer, m_rootStateName);
+		clearBankSel();
+		setPointer(m_statePointer, getNodeStepLabel(m_rootState.getStateName()));
 		m_assembler.opCode("RETURN");
 	}
 
@@ -334,6 +360,24 @@ public class Pic18AsmBuilder implements IModelVisitor
 	}
 	
 	/**
+	 * Start rendering commands to run on entering the node at the end of a state transition.
+	 * Will be followed by visitCommand* followed by a visitTransitionGoToNode
+	 * @param node
+	 */
+	@Override
+	public void startSharedEntryCode(INode node)
+	{
+		m_currentNodeName = null; // Do not allow matching
+		clearBankSel();
+		m_assembler.blankLine();
+		m_assembler.startBlockComment();
+		m_assembler.writeBlockCommentLine("Node " + node.getStateName() + " entry code.");
+		m_assembler.endBlockComment();
+		m_assembler.writeLabel(getNodeEntryLabel(node.getStateName()));
+	}
+	
+	
+	/**
 	 * Start a Node.
 	 * The Node will be started, all its transitions visited, then the node ended before any other
 	 * nodes are visited.
@@ -341,15 +385,15 @@ public class Pic18AsmBuilder implements IModelVisitor
 	 * The first node to be started is the root node.
 	 * @param node
 	 */
-	public void startNode(Node node)
+	public void startNode(INode node)
 	{
 		clearBankSel();
 		m_assembler.blankLine();
 		m_assembler.startBlockComment();
-		m_assembler.writeBlockCommentLine("Node " + node.getStateName());
+		m_assembler.writeBlockCommentLine("Node " + node.getStateName() + " step code.");
 		m_assembler.endBlockComment();
-		m_assembler.writeLabel(node.getStateName());
-		m_lastTransitionCanFallThrough = true;
+		m_assembler.writeLabel(getNodeStepLabel(node.getStateName()));
+		m_currentNodeName = node.getStateName();
 	}
 
 	/**
@@ -383,7 +427,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	/** Encode a transition precondition for Greater or Equals. Variable may need substitution */
 	public void visitTransitionPreconditionGE(Variable variable, int value)
 	{
-		m_assembler.writeComment(String.format(" Precondition %s >= %d", variable.getName(), value));
+		m_assembler.writeComment(String.format(" Precondition %s >= %s", variable.getName(), formatByte(value)));
 		if(value != 0)
 		{
 			banksel(variable);
@@ -396,7 +440,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	/** Encode a transition precondition for Equals */
 	public void visitTransitionPreconditionEQ(Variable variable, int value)
 	{
-		m_assembler.writeComment(String.format(" Precondition %s == %d", variable.getName(), value));
+		m_assembler.writeComment(String.format(" Precondition %s == %s", variable.getName(), formatByte(value)));
 		banksel(variable);
 		m_assembler.opCode("MOVLW", formatInt(value));
 		m_assembler.opCode("CPFSEQ", variable.getName(), access(variable));
@@ -406,7 +450,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	/** Encode a transition precondition for Less than or Equals */
 	public void visitTransitionPreconditionLE(Variable variable, int value)
 	{
-		m_assembler.writeComment(String.format(" Precondition %s <= %d", variable.getName(), value));
+		m_assembler.writeComment(String.format(" Precondition %s <= %s", variable.getName(), formatByte(value)));
 		if(value < 255)
 		{
 			banksel(variable);
@@ -502,12 +546,31 @@ public class Pic18AsmBuilder implements IModelVisitor
 		m_assembler.writeComment(" Command CALL " + method.getName());
 		m_assembler.opCode("CALL", method.getName());
 	}
-	
-	/** Encode a "Go to named node and return control" in the transition */
-	public void visitTransitionGoToNode(String stateName)
+
+	/** Encode a GOTO using shared entry code */
+	@Override
+	public void visitTransitionGoToSharedEntryCode(INode node)
 	{
-		m_assembler.writeComment(" Transition GOTO " + stateName);
-		setPointer(m_statePointer, stateName);
+		String stateName = node.getStateName();
+		m_assembler.writeComment(" Transition GOTO (Shared) " + stateName);
+		m_assembler.opCode("GOTO", getNodeEntryLabel(stateName));
+	}
+
+	/** Encode a "Go to named node and return control" in the transition */
+	@Override
+	public void visitTransitionGoToNode(INode node)
+	{
+		String stateName = node.getStateName();
+
+		if(!stateName.equals(m_currentNodeName))
+		{
+			m_assembler.writeComment(" Transition GOTO " + stateName);
+			setPointer(m_statePointer, getNodeStepLabel(stateName));
+		}
+		else
+		{
+			m_assembler.writeComment(" Transition GOTO SELF");
+		}
 		
 		if(m_returnCode != null && m_returnCode.size() > 0)
 		{
@@ -529,11 +592,6 @@ public class Pic18AsmBuilder implements IModelVisitor
 	 */
 	public void endNode(Node node)
 	{
-		if(m_lastTransitionCanFallThrough)
-		{
-			visitTransition(null);
-			visitTransitionGoToNode(m_rootStateName);
-		}
 	}
 
 	/**
@@ -650,4 +708,18 @@ public class Pic18AsmBuilder implements IModelVisitor
 		return "." + x;
 	}
 
+	/**
+	 * Format a byte value for assembler as hex or character constant.
+	 * @param x
+	 * @return
+	 */
+	private String formatByte(int x)
+	{
+		if(x >= 32 && x <= 126)
+		{
+			return String.format("'%c'", x);
+		}
+		return String.format("0x%02x", x);
+	}
+	
 }

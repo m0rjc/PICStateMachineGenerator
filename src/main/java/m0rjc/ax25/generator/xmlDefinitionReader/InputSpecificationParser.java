@@ -9,7 +9,12 @@ import org.xml.sax.SAXException;
  * Class to parse input specifications. This class currently will parse one
  * specification based on the following tokens.
  * 
- * 
+ * <ul>
+ * <li><code>123</code> A decimal number
+ * <li><code>0x1A</code> A hex number
+ * <li><code>'a'</code> A character
+ * <li><code>*</code> Anything
+ * </ul>
  * 
  * <strong>This code is not re-entrant</strong>
  * 
@@ -39,6 +44,7 @@ class InputSpecificationParser
 	 * <code>'0'-'9'</code>
 	 * </ul>
 	 * 
+	 * If a wildcard is read then null will be returned.
 	 * 
 	 * @param v
 	 * @param input
@@ -62,6 +68,7 @@ class InputSpecificationParser
 	 * <code>'0'-'9'</code>
 	 * </ul>
 	 * 
+	 * If a wildcard is read then null will be returned.
 	 * 
 	 * @param v
 	 * @param input
@@ -104,7 +111,7 @@ class InputSpecificationParser
 
 		if (firstValue == WILDCARD)
 		{
-			return Precondition.emptyCondition();
+			return null;
 		}
 
 		if (isNotAtEnd())

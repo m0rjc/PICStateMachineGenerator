@@ -17,14 +17,14 @@ public class Simulation
 	private SimulatedVariable m_inputVariable;
 	
 	private Set<String> m_assemblerSymbols = new HashSet<String>();
-	private Map<String, SimulatedNode> m_states = new HashMap<String, SimulatedNode>();
+	private Map<String, SimulatedNode> m_nodes = new HashMap<String, SimulatedNode>();
 	private Map<String, SimulatedVariable> m_variables = new HashMap<String, SimulatedVariable>();
 	private Map<String, SimulatedExternalMethod> m_externalMethods = new HashMap<String, SimulatedExternalMethod>();
 	
 	public void addNode(SimulatedNode node)
 	{
 		assertNameUnique(node.getName());
-		m_states.put(node.getName(), node);
+		m_nodes.put(node.getName(), node);
 	}
 
 	/**
@@ -54,7 +54,7 @@ public class Simulation
 	public void setCurrentState(String name) throws SimulationException
 	{
 		Log.finest("Simulation entering state: " + name);
-		m_currentState = m_states.get(name);
+		m_currentState = m_nodes.get(name);
 		if(m_currentState == null)
 		{
 			throw new SimulationException("No state with name " + name);
@@ -115,6 +115,26 @@ public class Simulation
 		}
 	}
 
+	/**
+	 * Set the flag value
+	 * @param variable
+	 * @param flagName
+	 * @param newValue
+	 * @throws SimulationException
+	 */
+	public void setFlag(String variable, String flagName, boolean newValue) throws SimulationException
+	{
+		SimulatedVariable v = getVariable(variable);
+		v.setBit(flagName, newValue);
+	}
+	
+	/**
+	 * Assert that the given flag has the required value
+	 * @param variable
+	 * @param flagName
+	 * @param expectedResult
+	 * @throws SimulationException
+	 */
 	public void assertFlag(String variable, String flagName, boolean expectedResult) throws SimulationException
 	{
 		SimulatedVariable v = getVariable(variable);
@@ -126,6 +146,12 @@ public class Simulation
 		}
 	}
 
+	/**
+	 * Return the simulated variable with the given name
+	 * @param variableName
+	 * @return
+	 * @throws SimulationException
+	 */
 	SimulatedVariable getVariable(String variableName) throws SimulationException
 	{
 		SimulatedVariable v = m_variables.get(variableName);
@@ -143,7 +169,7 @@ public class Simulation
 
 	public int getStateCount()
 	{
-		return m_states.size();
+		return m_nodes.size();
 	}
 
 	/**
@@ -181,10 +207,41 @@ public class Simulation
 		m_externalMethods.put(name, new SimulatedExternalMethod(name));
     }
 
+	/**
+	 * Assert that the code has called the given method
+	 * @param name
+	 * @throws SimulationException
+	 */
 	public void assertMethodCalled(String name) throws SimulationException
 	{
 		SimulatedExternalMethod impl = m_externalMethods.get(name);
 		if(impl == null) throw new SimulationException("Method " + name + " not found (test assertion exception)");
 		if(impl.getCallCount() == 0) throw new SimulationException("Method " + name + " was not called.");
+	}
+
+	/**
+	 * Simulate the shared entry code for the node with the given name.
+	 * @param stateName node name to look for
+	 * @exception SimulationException if the code fails
+	 * @return {@link ActionResult#RETURN_FROM_STATE_ENGINE} because all entry code should end this way.
+	 */
+	public ActionResult runSharedEntryCode(String stateName) throws SimulationException
+	{
+		SimulatedNode targetState = m_nodes.get(stateName);
+		if(targetState == null)
+		{
+			throw new SimulationException("No state with name " + stateName);
+		}
+		return targetState.runSharedEntryCode();
+	}
+
+	/**
+	 * Look up the node with the given name.
+	 * @param stateName
+	 * @return the node, or null if not found.
+	 */
+	public SimulatedNode getNode(String stateName)
+	{
+		return m_nodes.get(stateName);
 	}
 }

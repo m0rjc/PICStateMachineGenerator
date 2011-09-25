@@ -94,7 +94,11 @@ class TransitionSaxHandler extends ChainedSaxHandler implements ConditionListSax
 		
 		if(input != null && input.length() > 0)
 		{
-			m_currentTransition.when(InputSpecificationParser.INSTANCE.parseCondition(m_model.getInputVariable(), input));
+			Precondition condition = InputSpecificationParser.INSTANCE.parseCondition(m_model.getInputVariable(), input);
+			if(condition != null)
+			{
+				m_currentTransition.when(condition);
+			}
 		}
 		
 	}

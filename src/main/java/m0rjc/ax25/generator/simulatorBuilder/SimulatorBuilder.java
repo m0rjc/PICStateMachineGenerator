@@ -1,11 +1,14 @@
 package m0rjc.ax25.generator.simulatorBuilder;
 
+import java.util.logging.Level;
+
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
 import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
+import m0rjc.ax25.generator.visitor.INode;
 
 /**
  * Build a simulator following instructions from the model.
@@ -13,11 +16,17 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
  */
 public class SimulatorBuilder implements IModelVisitor
 {
+	/** What we are currently building */
+	private enum Building { NODE_SHARED_ENTRY, TRANSITION };
+	
+	private Building m_nowBuilding;
+	
 	private Simulation m_simulation = new Simulation();
 	private SimulatedNode m_currentNode;
 	private SimulatedTransition m_currentTransition;
 	private SimulatedVariable m_currentVariable;
 	private String m_rootNodeName;
+	
 
 	public void registerSpecialFunctionRegister(String name)
 	{
@@ -109,6 +118,31 @@ public class SimulatorBuilder implements IModelVisitor
 		// Nothing to do
 	}
 	
+	@Override
+	public void startSharedEntryCode(INode node)
+	{
+		SimulatedNode sim = initialiseNode(node);
+		sim.declareSharedEntryCode();
+		m_nowBuilding = Building.NODE_SHARED_ENTRY;
+	}
+
+	private SimulatedNode initialiseNode(INode node)
+	{
+		m_currentNode = m_simulation.getNode(node.getStateName());
+		if(m_currentNode == null)
+		{
+			m_currentNode = new SimulatedNode(node.getStateName());
+			m_simulation.addNode(m_currentNode);
+			
+			if(m_rootNodeName == null)
+			{
+				m_rootNodeName = node.getStateName();
+				m_simulation.setCurrentState(m_currentNode);
+			}			
+		}
+		return m_currentNode;
+	}
+
 	/**
 	 * Start a Node.
 	 * The Node will be started, all its transitions visited, then the node ended before any other
@@ -117,16 +151,10 @@ public class SimulatorBuilder implements IModelVisitor
 	 * The first node to be started is the root node.
 	 * @param node
 	 */
-	public void startNode(Node node)
+	public void startNode(INode node)
 	{
-		m_currentNode = new SimulatedNode(node.getStateName());
-		m_simulation.addNode(m_currentNode);
-		
-		if(m_rootNodeName == null)
-		{
-			m_rootNodeName = node.getStateName();
-			m_simulation.setCurrentState(m_currentNode);
-		}
+		initialiseNode(node);
+		m_nowBuilding = Building.TRANSITION;
 	}
 
 	/**
@@ -145,7 +173,7 @@ public class SimulatorBuilder implements IModelVisitor
 		final String name = variable.getName();
 		final Simulation simulation = m_simulation;
 		
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -166,7 +194,7 @@ public class SimulatorBuilder implements IModelVisitor
 		final String name = variable.getName();
 		final Simulation simulation = m_simulation;
 		
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -187,7 +215,7 @@ public class SimulatorBuilder implements IModelVisitor
 		final String name = variable.getName();
 		final Simulation simulation = m_simulation;
 		
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -208,7 +236,7 @@ public class SimulatorBuilder implements IModelVisitor
 		final String name = flag.getName();
 		final Simulation simulation = m_simulation;
 		
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -231,7 +259,7 @@ public class SimulatorBuilder implements IModelVisitor
 		
 		final Simulation simulation = m_simulation;
 
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -256,7 +284,7 @@ public class SimulatorBuilder implements IModelVisitor
 		
 		final Simulation simulation = m_simulation;
 
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -280,7 +308,7 @@ public class SimulatorBuilder implements IModelVisitor
 		final Simulation simulation = m_simulation;
 		final int size = variable.getSize();
 
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -302,7 +330,7 @@ public class SimulatorBuilder implements IModelVisitor
 		final String indexerName = indexer.getName();
 		final Simulation simulation = m_simulation;
 	
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -324,7 +352,7 @@ public class SimulatorBuilder implements IModelVisitor
 		final String variableName = variable.getName();
 		final Simulation simulation = m_simulation;
 	
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -343,7 +371,7 @@ public class SimulatorBuilder implements IModelVisitor
 		final String variableName = flags.getName();
 		final Simulation simulation = m_simulation;
 	
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -360,7 +388,7 @@ public class SimulatorBuilder implements IModelVisitor
     {
 		final Simulation simulation = m_simulation;
 	
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -372,11 +400,12 @@ public class SimulatorBuilder implements IModelVisitor
     }
 
 	/** Encode a "Go to named node and return control" in the transition */
-	public void visitTransitionGoToNode(final String stateName)
+	public void visitTransitionGoToNode(INode node)
 	{
+		final String stateName = node.getStateName();
 		final Simulation simulation = m_simulation;
 
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -387,6 +416,22 @@ public class SimulatorBuilder implements IModelVisitor
 		});		
 	}
 	
+	@Override
+	public void visitTransitionGoToSharedEntryCode(INode node)
+	{
+		final String stateName = node.getStateName();
+		final Simulation simulation = m_simulation;
+
+		addAction(new SimulatedAction() {
+			@Override
+			public ActionResult run() throws SimulationException
+			{
+				Log.fine(String.format("    Command: GOTO %s (Shared)", stateName));
+				return simulation.runSharedEntryCode(stateName);
+			}
+		});				
+	}
+
 	/**
 	 * End of visiting a Node
 	 * @param node
@@ -398,7 +443,7 @@ public class SimulatorBuilder implements IModelVisitor
 		
 		final Simulation simulation = m_simulation;
 		final String stateName = m_rootNodeName;
-		m_currentTransition.addAction(new SimulatedAction() {
+		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
@@ -415,5 +460,31 @@ public class SimulatorBuilder implements IModelVisitor
 	public void finished()
 	{
 		Log.fine(String.format("Simulator initialised for test. %d states", m_simulation.getStateCount()));
+	}
+	
+	/**
+	 * Add a action to whatever is currently being built.
+	 * @param a
+	 */
+	private void addAction(SimulatedAction a)
+	{
+		try
+		{
+			switch(m_nowBuilding)
+			{
+			case TRANSITION:
+				m_currentTransition.addAction(a);
+				break;
+			case NODE_SHARED_ENTRY:
+				m_currentNode.addSharedEntryCode(a);
+				break;
+			}
+		}
+		catch (SimulationException e)
+		{
+			Log.log(Level.SEVERE, "Exception building simulation: " + e.getMessage(), e);
+			// TODO: Work out exceptions in the visiting code.
+			throw new RuntimeException(e);
+		}
 	}
 }

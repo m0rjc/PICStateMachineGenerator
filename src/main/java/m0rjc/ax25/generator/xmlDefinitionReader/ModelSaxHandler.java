@@ -78,6 +78,7 @@ class ModelSaxHandler extends ChainedSaxHandler
 	private void onEndModel()
 	{
 		m_model.setRoot(m_model.getNode(m_rootName));
+		m_model.optimiseModel();
 	}
 
 	/**

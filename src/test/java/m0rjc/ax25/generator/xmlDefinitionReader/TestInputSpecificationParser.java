@@ -74,8 +74,7 @@ public class TestInputSpecificationParser
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
 		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
-		CompositePrecondition expected = (CompositePrecondition) Precondition.emptyCondition();
-		Assert.assertEquals(expected, (CompositePrecondition)parseSpec(parser, v, "*"));		
+		Assert.assertNull(parseSpec(parser, v, "*"));		
 	}
 
 	@Test
