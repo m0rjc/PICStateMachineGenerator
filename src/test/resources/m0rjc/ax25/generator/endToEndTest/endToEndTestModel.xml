@@ -22,7 +22,7 @@
 				<Transition input="'$'" target="dollar" />
 			</Node>
 			<Node name="dollar">
-				<Script description="Read a GPGGA locaton string">
+				<Script description="Read a GPGGA location string">
 					<Literal>GPGGA</Literal>
 					<GuardCondition>
 						<FlagCheck variable="gpsFlags" flag="FLAG_GPS_NEW_POSITION"	value="false" />

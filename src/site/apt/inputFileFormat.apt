@@ -47,7 +47,7 @@ Input File Format
     The <<inputVariable>> is the name of the variable that contains the state machine's input.
     It is a single byte variable. It must be declared in the Symbols section of the file.
 
-** Variables Subsection
+* Variables Subsection
 
 +----------------------------------------------------------------------------------------+
 <Symbols>
@@ -88,7 +88,7 @@ Input File Format
     * <<none>> No declaration is made in the generated code. It is assumed that the symbol is
       provided by any include file used. This may be used for a Special Function Register.
 
-*** Flags
+** Flags
 
 +----------------------------------------------------------------------------------------+
 <Symbol name="gpsFlags" loc="accessram" decl="global">
@@ -108,8 +108,237 @@ Input File Format
 	increasing to the most significant bit then to the least significant bit of the 
 	second byte and so on.
 
-** Nodes Subsection
+* Nodes Subsection
 
++----------------------------------------------------------------------------------------+
+<Nodes>
+	<Node name="root">
+		<Transition input="'$'" target="dollar" />
+		...
+	</Node>
+	<Node name="dollar">
+		<Script description="Read a GPGGA locaton string">
+		...
+		</Script>
+	</Node>
+	...
+</Nodes>
++----------------------------------------------------------------------------------------+
+
+    Each Node element defines a named node in the system. Node elements optionally contain
+    a list of entry conditions and commands followed by a list of Transitions and Scripts.
+    Transitions and Scripts may be defined in any order. They are evaluated in the order they
+    are defined, so should be defined with most specific conditions first.
+    
++----------------------------------------------------------------------------------------+
+<Node name="root">
+	<EntryConditions>
+		...	
+	</EntryConditions>
+	<EntryCommands>
+		...
+	</EntryCommands>
+	...
+</Node>
++----------------------------------------------------------------------------------------+
+    
+    
+** Entry Conditions
+
+    The EntryConditions element is optional.
+	The following Condition is supported
+	
++----------------------------------------------------------------------------------------+
+<FlagCheck variable="name" flag="FLAG_NAME" value="true"/>
++----------------------------------------------------------------------------------------+
+	
+	<<variable>> is the name of the variable containing the flag.
+	
+	<<flag>> is the name of the flag, defined using a Flag element.
+	
+	<<value>> is the expected value, true or false.
+	
+    
+** Entry Commands
+    
+    The EntryCommands element is optional. It contains any of the following commands in
+    any order. 
+    
+    Entry Commands are executed as the state machine switches to the node
+    at the end of handling the previous node.
+    
+*** Clear Value
+    
++----------------------------------------------------------------------------------------+
+<ClearValue>symbolName</ClearValue>
++----------------------------------------------------------------------------------------+
+    
+    Clear the variable with the given name. All bytes are cleared.
+    
+*** Clear Indexed Value
+    
++----------------------------------------------------------------------------------------+
+<ClearIndexedValue variable="name" indexer="indexVariable"/>
++----------------------------------------------------------------------------------------+
+
+   Clear the byte at the given index within the given variable.
+   
+   <<variable>> is the variable that contains the array to be accessed.
+   
+   <<indexer>> is the variable containing the offset into the array.
+	
+*** Store Value    
+
++----------------------------------------------------------------------------------------+
+<StoreValue source="sourceVariable" 
+            destination="destinationSymbol" destinationIndexer="indexer"/>
++----------------------------------------------------------------------------------------+
+
+    <<sourceVariable>> is the variable to copy the value from. Currently this variable
+    must be a single byte value. If this is not provided then the state model's input
+    variable is used.
+    
+    <<destination>> is the variable to copy to.
+    
+    If <<destinationIndexer>> is provided then this is a variable contianing and offset
+    into the destination array. If not provided then no indexing is used. 
+
+*** Set Flag
+
++----------------------------------------------------------------------------------------+
+<SetFlag variable="name" flag="FLAG_NAME" value="true"/>
++----------------------------------------------------------------------------------------+
+
+	Set the flag <<FLAG_NAME>> within the given flag <<variable>> to the required value.
+
+*** Call
+
++----------------------------------------------------------------------------------------+
+<Call>methodName</Call>
++----------------------------------------------------------------------------------------+
+
+	Results in a CALL statement.
+    
+** Transitions
+
++----------------------------------------------------------------------------------------+
+<Transition input="'0'-'9'" target="state1234">
+	<Conditions>
+		....
+	</Conditions>
+	<Commands>
+		....
+	</Commands>
+</Transition>
++----------------------------------------------------------------------------------------+
+
+	The Transition element generates a transition from the contianing node.
+	
+	The <<target>> attribute is required. It contains the name of the node to transition
+	to when the input condition is satisfied.
+	
+	The <<Conditions>> are optional. The set of possible Conditions is the same as the
+	possible EntryConditions for a Node.
+	
+	The <<input>> attribute is optional. If provided it can contain a value in any of the
+	following forms:
+	
+*----------+-------------------------------------+
+| <<12>>   | a decimal number                    |
+*----------+-------------------------------------+
+| <<0x1A>> | hexadecimal number                  |
+*----------+-------------------------------------+
+| <<'a'>>  | a character                         |
+*----------+-------------------------------------+
+| *        | matches any input.                  |
+*----------+-------------------------------------+
+	
+	These forms may be combined using a '-' separator to give a range. 
+	
+	The <<Commands>> are optional. These are commands to execute when the transition 
+	executes. They are executed after any entry conditions for the target node are checked,
+	and before any entry commands for the target node are executed. The set of possible
+	commands is the same as the EntryCommands element in a Node.
+	
+** Scripts
+
+    Scripts provide an easy way to build a state machine designed to match a given
+    input. Multiple scripts may be defined from a given node. If they start with the
+    same input then they will be combined as needed.
+    
+    A Script is a list of elements. Node generating elements create a transition or transitions
+    leading to a new node. "GuardCondition" and "Commands" elements create Entry Conditions and
+    Entry Commands on the <current node>. The <current node> starts off as the Node
+    that contains the script. Each node generating element ends in a new empty <current node>.
+    
+    <<Because of this a
+    Script should not start with a Condition or Command element. It will be applied to the node
+    that contains the script!>>
+    
+    The Script element is
+
++----------------------------------------------------------------------------------------+
+<Script description="Read a GPGGA location string">
+</Script>
++----------------------------------------------------------------------------------------+
+    
+    The <<description>> attribute is optional.
+    
+*** Literal Text
+
++----------------------------------------------------------------------------------------+
+<Literal>GPGGA</Literal>
++----------------------------------------------------------------------------------------+
+
+	A "Literal" will create a chain of nodes that will read the given literal text.
+	In this example the <<<current node>>> will have a new transition on the letter 'G'
+	which will lead to a new node. This node will have a transition on the letter 'P', and
+	so forth until a transition on the letter 'A' leads to the new <current node>.
+	
+	If the <current node> already had a transition on the letter 'G' it would have been reused.
+	
+*** Numbers
+
++----------------------------------------------------------------------------------------+
+<Numbers min="6" max="6" store="gpsTime" />
++----------------------------------------------------------------------------------------+
+
+	Read 6 digits. Store them in the variable"gpsTime".
+	
+	<<min>> is the minimum amount of numbers to read. If min is zero then no new
+	<current node> is created.
+	
+	<<max>> is the maximum amount of numbers to read.
+	
+	<<store>> is optional. This is the variable to store the numbers in. The numbers are
+	stored as ASCII values. If max is greater than min then a null terminated string is used,
+	otherwise the array will contain just the input bytes.
+	
+*** Choices
+
++----------------------------------------------------------------------------------------+
+<Choices>
+	<Choice input="'S'">
+		<Commands>
+			<SetFlag flag="FLAG_GPS_NORTH" variable="gpsFlags" value="false" />
+		</Commands>
+	</Choice>
+	<Choice input="'N'">
+		<Commands>
+			<SetFlag flag="FLAG_GPS_NORTH" variable="gpsFlags" value="true" />
+		</Commands>
+	</Choice>
+</Choices>
++----------------------------------------------------------------------------------------+
+
+*** Skip To
+
++----------------------------------------------------------------------------------------+
+<SkipTo>
+	<Choice input="'$'" target="dollar" />
+	<Choice input="','" />
+</SkipTo>
++----------------------------------------------------------------------------------------+
 
 * Unit Test Section
 
