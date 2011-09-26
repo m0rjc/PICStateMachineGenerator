@@ -1,0 +1,154 @@
+Input File Format
+
+    The State Machine Generator accepts an XML input file. This file describes the state machine,
+    the variables it accesses, unit tests for the state machine and the required output from
+    the generator.
+    
+* File Header
+
++----------------------------------------------------------------------------------------+
+<?xml version="1.0" encoding="UTF-8"?>
+<StateGeneratorRun xmlns="http://net.raynet-uk.m0rjc.picprojects/stategenerator">
+    <Model name="gps" root="root" inputVariable="gpsInput">
+    	....
+    </Model>
+    <UnitTests>
+        ....
+    </UnitTests>
+    <Output>
+        ....
+    </Output>
+</StateGeneratorRun>    
++----------------------------------------------------------------------------------------+
+
+    The input file is an XML document. The root element is StateGeneratorRun. 
+    This contains the sections that make up the file.
+
+* Model Section
+
++----------------------------------------------------------------------------------------+
+<Model name="gps" root="root" inputVariable="gpsInput">
+    <Symbols>
+    ...
+    </Symbols>
+    <Nodes>
+    ...
+    </Nodes>
+</Model>
++----------------------------------------------------------------------------------------+
+
+    The <<name>> is a short name for the model. It must be a valid MPASM symbol. It will be used
+    in label generation and may be used to produce output file names.
+
+    The <<root>> is the name of the Initial State for the model. This is the state that will
+    be set by the initialisation method and the fallback state should a Node see input that it
+    does not have a transition for.
+    
+    The <<inputVariable>> is the name of the variable that contains the state machine's input.
+    It is a single byte variable. It must be declared in the Symbols section of the file.
+
+** Variables Subsection
+
++----------------------------------------------------------------------------------------+
+<Symbols>
+	<Symbol name="gpsInput" loc="accessram" decl="global" />
+	<Symbol name="gpsTime" size="6" loc="page1" decl="global" />
+	...
+</Symbols>
++----------------------------------------------------------------------------------------+
+
+	The <<name>> is the name of the symbol. It must be a valid MPASM symbol name.
+	
+	The <<loc>> defines the location of the symbol. Valid values are
+	
+	* <<accessram>> is a variable stored in the PIC18's access ram. For non-PIC18 or
+	  PIC18 in extended mode (when supported) this is a hint that the variable should
+	  be easy to access if possible. On PIC18 the variable will be declared in a UDATA_SHR
+	  section, and access will use the "A" access bank modifier.
+	  
+	* <<rom>> declares a symbol defined in ROM. This is used for external method declarations.
+	
+	* <<page0>> to <<page15>> are banked pages. The generated code will not ensure that the
+	  variables are placed in these pages, but will output UDATA sections with names that the
+	  user should configure in their linker script. The generated code will use BANKSEL
+	  statements where needed to access these variables.
+
+    The <<size>> is the size in bytes to allocate. It will default to 1 byte.
+    
+    The <<decl>> controls which code is responsible for declaring storage for the variable.
+    It is optional and defaults to "internal". Values are
+    
+    * <<internal>> Storage is declared in the generated code. The symbol is not made GLOBAL.
+    
+    * <<global>> Storage is declared in the generated code. The symbol is marked GLOBAL.
+      An EXTERN entry will be generated in the include file.
+
+    * <<extern>> Storage is not declared in the generated code. The symbol is marked EXTERN.
+
+    * <<none>> No declaration is made in the generated code. It is assumed that the symbol is
+      provided by any include file used. This may be used for a Special Function Register.
+
+*** Flags
+
++----------------------------------------------------------------------------------------+
+<Symbol name="gpsFlags" loc="accessram" decl="global">
+	<Flags>
+		<Flag>FLAG_GPS_NEW_POSITION</Flag>
+		<Flag>FLAG_GPS_NORTH</Flag>
+		<Flag>FLAG_GPS_EAST</Flag>
+	</Flags>
+</Symbol>
++----------------------------------------------------------------------------------------+
+
+	Flags are bitfields. The size of the variable will be calculated as required to
+	contain the amount of flags. It will always be greater than or equal to the size
+	specified as <<size>> if provided.
+	
+	Flags are allocated starting from the least significant bit of the first byte, 
+	increasing to the most significant bit then to the least significant bit of the 
+	second byte and so on.
+
+** Nodes Subsection
+
+
+* Unit Test Section
+
+
+
+* Output Section
+
++----------------------------------------------------------------------------------------+
+<Output>
+	<Pic18 processor="18F14K50">
+		<Include>p18f14k50.inc</Include>
+	</Pic18>
+</Output>
++----------------------------------------------------------------------------------------+
+
+** The Pic18 Target
+
++----------------------------------------------------------------------------------------+
+<Pic18 processor="18F14K50" largeRomModel="false" outputBaseName="generated/gps">
+	<Include>p18f14k50.inc</Include>
+	<ReturnLine>RETURN</ReturnLine>
+</Pic18>
++----------------------------------------------------------------------------------------+
+
+    The Pic18 target outputs three files, assembler code (.asm), assembler include (.inc)
+    and C include (.h).
+
+    The <<processor>> is the target processor which will be output as a "list p=" directive.
+    
+    If <<largeRomModel>> is true then 3 byte pointers will be used, otherwise the default
+    is to use 2 byte pointers.
+    
+    The <<outputBaseName>> is the base name for generated files. It will default to the
+    Model Name.
+    
+    Each <<Include>> will be output as a #include.
+    
+    Each <<ReturnLine>> will be output in order to return control to the calling program.
+    For example code running in an interrupt handler may wish to use the RETFIE instruction
+    or GOTO an interrupt cleanup block. If no return lines are given then the default is to
+    output a RETURN statement.
+     

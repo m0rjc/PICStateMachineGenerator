@@ -1,5 +1,10 @@
 <project name="PIC State Machine Generator">
 	<body>
-		<menu ref="reports"/>
+		<menu name="Project Documentation">
+			<item name="Introduction" href="index.html"/>
+			<item name="Anatomy of a State Transition" href="anatomyOfAStateTransition.html"/>
+			<item name="Input File Format" href="inputFileFormat.html"/>
+		</menu>
+		<menu ref="reports" name="Maven Reports"/>
 	</body>
 </project>

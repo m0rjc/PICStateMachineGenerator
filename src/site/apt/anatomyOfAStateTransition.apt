@@ -1,0 +1,37 @@
+The Anatomy of a State Transition
+
+	This document describes the behaviour of the generated state machine. It helps to explain what happens to the
+	parts of a Node and Transition in the state model.
+	
+	Each State Transition as carried out in response to the "step" method. The "step" method will be generated
+	with the name of the state model. For example a model called "gps" will have a step method "gpsStep".
+	The calling procedure is to set up the input variable then call this method.
+	
+	Considering the anatomy of a Node:
+	
+	TODO: Figure showing node.
+	
+	On calling the Step method:
+	
+	* The Step method will "GOTO" the current Node, pointed to by the Node Pointer.
+	
+	* The Node will scan through its transitions in the order defined, looking for a match that satisfies both the preconditions for
+	  the transition and any entry conditions for the target node.
+	
+		* If satisfied then any transition commands will be executed followed by any entry commands for the target node.
+		
+		* All Nodes will be generated such that at least one transition will match. The fallback transition resets the
+		  state machine to its Initial State. This is in keeping with a system designed to parse input data.
+	
+	* The node pointer is then set to point to the target node and control is returned to the calling program.
+	
+	[]
+	
+Skipping Node Entry Commands
+
+ 	Transitions can be set to skip the entry commands associated with the target node. This feature is used to
+ 	create the number parsing state machines. For example a state machine that reads data into an array will
+ 	set the array index to zero when first entered. By allowing a "transition to self" that does not process
+ 	that reset, it is possible to read the array without needing an additional state for subsequent bytes.
+ 	
+ 

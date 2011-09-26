@@ -1,0 +1,19 @@
+State Machine Generator for Microcontrollers
+
+* Introduction
+
+    This project generates state machine code for microcontrollers. The state machines
+    are designed to be run asynchronously, for example in response to an interrupt.
+    An example scenario is parsing input from a GPS module connected over a serial port.
+    
+    The project currently supports the following targets:
+    
+    * Microchip PIC18 Assembler
+    
+    []
+    
+    The generator takes its input from an XML file.
+    
+* News and Announcements
+
+    The state generator is still in early development.
