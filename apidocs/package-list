@@ -1,0 +1,8 @@
+m0rjc.ax25.generator
+m0rjc.ax25.generator.diagramBuilder
+m0rjc.ax25.generator.model
+m0rjc.ax25.generator.picAsmBuilder
+m0rjc.ax25.generator.simulatorBuilder
+m0rjc.ax25.generator.swingui
+m0rjc.ax25.generator.visitor
+m0rjc.ax25.generator.xmlDefinitionReader
