@@ -143,7 +143,7 @@ Input File Format
 +----------------------------------------------------------------------------------------+
     
     
-** Entry Conditions
+** {Conditions} Entry Conditions
 
     The EntryConditions element is optional.
 	The following Condition is supported
@@ -159,7 +159,7 @@ Input File Format
 	<<value>> is the expected value, true or false.
 	
     
-** Entry Commands
+** {Commands} Entry Commands
     
     The EntryCommands element is optional. It contains any of the following commands in
     any order. 
@@ -238,19 +238,19 @@ Input File Format
 	to when the input condition is satisfied.
 	
 	The <<Conditions>> are optional. The set of possible Conditions is the same as the
-	possible EntryConditions for a Node.
+	possible {{{Conditions}EntryConditions for a Node}}.
 	
 	The <<input>> attribute is optional. If provided it can contain a value in any of the
 	following forms:
 	
 *----------+-------------------------------------+
-| <<12>>   | a decimal number                    |
+  <<12>>   | a decimal number                    
 *----------+-------------------------------------+
-| <<0x1A>> | hexadecimal number                  |
+  <<0x1A>> | hexadecimal number                  
 *----------+-------------------------------------+
-| <<'a'>>  | a character                         |
+  <<'a'>>  | a character                         
 *----------+-------------------------------------+
-| *        | matches any input.                  |
+  *        | matches any input.                  
 *----------+-------------------------------------+
 	
 	These forms may be combined using a '-' separator to give a range. 
@@ -258,7 +258,7 @@ Input File Format
 	The <<Commands>> are optional. These are commands to execute when the transition 
 	executes. They are executed after any entry conditions for the target node are checked,
 	and before any entry commands for the target node are executed. The set of possible
-	commands is the same as the EntryCommands element in a Node.
+	commands is the same as the {{{Commands}EntryCommands element in a Node}}.
 	
 ** Scripts
 

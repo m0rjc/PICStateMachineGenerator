@@ -9,7 +9,7 @@ The Anatomy of a State Transition
 	
 	Considering the anatomy of a Node:
 	
-	TODO: Figure showing node.
+[images/NodeAndTransitionModel.png] Model of a node and its transitions
 	
 	On calling the Step method:
 	
