@@ -1,4 +1,9 @@
-package m0rjc.ax25.generator.xmlDefinitionReader;
+package m0rjc.ax25.generator.xmlDefinitionReader.framework;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -18,30 +23,67 @@ import org.xml.sax.helpers.DefaultHandler;
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
-class ChainedSaxHandler extends DefaultHandler
+public class ChainedSaxHandler extends DefaultHandler implements NamedTagHandler
 {
-	private ChainedSaxHandlerListener m_parent;
-	private DefaultHandler m_child;
+	private TagHandler m_parent;
+	private TagHandler m_child;
 	private String m_outerElementName;
 	private boolean m_isOuterElement;
 	private boolean m_wantsText;
 	private StringBuilder m_textBuffer;
+	private List<NamedTagHandler> m_namedHandlers;
+	
+	/** Names that are interesting for the NamedTagHandler functionality */
+	private Set<String> m_interestingNames = new HashSet<String>();
+	
+	@Override
+	public boolean isInterested(String uri, String localName, String qName, Attributes attributes)
+	{
+		return m_interestingNames.contains(localName);
+	}
 	
 	/**
-	 * Set future requests to go to the given child.
+	 * The default implementation of {@link #isInterested(String, String, String, Attributes)} will
+	 * return true if the localName is registered here.
+	 * @param name
+	 */
+	protected void registerInterestInTagName(String name)
+	{
+		m_interestingNames.add(name);
+	}
+	
+	/**
+	 * Register the given set of handlers which will be interrogated to see
+	 * if they handle child elements.
+	 * @param handlers
+	 */
+	protected void registerNamedHandlers(Iterable<NamedTagHandler> handlers)
+	{
+		m_namedHandlers = new ArrayList<NamedTagHandler>();
+		for(NamedTagHandler handler : handlers)
+		{
+			m_namedHandlers.add(handler);
+		}
+	}
+
+	/**
+	 * Set future events to go to the given child until it returns with {@link #childReturned()}.
+	 * Pass on the initial startElement event.
 	 * Will set the parent link on the child so it can return.
 	 * @param child
 	 */
-	protected void setChild(ChainedSaxHandler child)
+	protected void startChild(TagHandler child, String uri, String localName, String qName,
+		Attributes attributes) throws SAXException
 	{
 		m_child = child;
-		child.setParent(new ChainedSaxHandlerListener() {
-			@Override
-			public void childReturned()
-			{
-				m_child = null;
-			}
-		});
+		child.setParent(this);
+		m_child.startElement(uri, localName, qName, attributes);
+	}
+
+	/** Callback from a child TagHandler when it returns */
+	public void childReturned()
+	{
+		m_child = null;
 	}
 	
 	/**
@@ -60,7 +102,7 @@ class ChainedSaxHandler extends DefaultHandler
 	 * Set the parent link
 	 * @param parent
 	 */
-	private void setParent(ChainedSaxHandlerListener parent)
+	public void setParent(TagHandler parent)
 	{
 		m_parent = parent;
 	}
@@ -89,10 +131,16 @@ class ChainedSaxHandler extends DefaultHandler
 			m_child.startElement(uri, localName, qName, attributes);
 		}
 
+		if(m_child == null && m_namedHandlers != null && !m_isOuterElement)
+		{
+			checkNamedHandlers(uri, localName, qName, attributes);
+		}
+		
 		if(m_child == null)
 		{
 			onStartElement(uri, localName, qName, attributes);
 		}
+		
 		m_isOuterElement = false;
 	}
 
@@ -111,6 +159,21 @@ class ChainedSaxHandler extends DefaultHandler
 	{
 	}
 
+	private boolean checkNamedHandlers(String uri, String localName, String qName, Attributes attributes)
+		throws SAXException
+	{
+		for(NamedTagHandler handler : m_namedHandlers)
+		{
+			if(handler.isInterested(uri, localName, qName, attributes))
+			{
+				startChild(handler, uri, localName, qName, attributes);
+				return true;
+			}
+		}
+		return false;
+	}
+
+	
 	/**
 	 * If {@link #isReadingText()} 
 	 */

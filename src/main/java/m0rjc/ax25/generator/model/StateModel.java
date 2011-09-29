@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import m0rjc.ax25.generator.cdi.GeneratorRunScoped;
 import m0rjc.ax25.generator.model.Variable.Ownership;
 import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
@@ -15,6 +16,7 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
  * 
  * @author Richard Corfield
  */
+@GeneratorRunScoped
 public class StateModel implements IModel
 {
 	/** A name for the model. Must be short - will be used for symbols */
@@ -41,8 +43,16 @@ public class StateModel implements IModel
 	private int m_stateIndex;
 	
 	/**
+	 * Constructs with an empty name.
+	 */
+	public StateModel()
+	{
+		this("");
+	}
+	
+	/**
 	 * Construct the model
-	 * @param name A short name, about 3 characters, used in symbols
+	 * @param name A short name, about 3 characters, used in symbols. Can be empty.
 	 */
 	public StateModel(String name)
 	{
@@ -311,6 +321,11 @@ public class StateModel implements IModel
 			if(l.getName().equals(name)) return l;
 		}
 		return null;
+	}
+
+	public void setModelName(String modelName)
+	{
+		m_modelName = modelName;
 	}
 
 }

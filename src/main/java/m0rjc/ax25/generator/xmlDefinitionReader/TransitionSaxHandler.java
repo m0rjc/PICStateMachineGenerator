@@ -4,6 +4,9 @@ import m0rjc.ax25.generator.model.Command;
 import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Transition;
+import m0rjc.ax25.generator.xmlDefinitionReader.commands.CommandListSaxHandler;
+import m0rjc.ax25.generator.xmlDefinitionReader.conditions.ConditionListSaxHandler;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -51,13 +54,11 @@ class TransitionSaxHandler extends ChainedSaxHandler implements ConditionListSax
 		}
 		else if("Conditions".equals(localName))
 		{
-			setChild(m_conditionHandler);
-			m_conditionHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_conditionHandler, uri, localName, qName, attributes);
 		}
 		else if("Commands".equals(localName))
 		{
-			setChild(m_commandHandler);
-			m_commandHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_commandHandler, uri, localName, qName, attributes);
 		}
 	}
 

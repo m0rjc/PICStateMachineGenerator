@@ -1,4 +1,4 @@
-package m0rjc.ax25.generator.xmlDefinitionReader;
+package m0rjc.ax25.generator.xmlDefinitionReader.commands;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -8,6 +8,7 @@ import m0rjc.ax25.generator.model.Command;
 import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Variable;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 /**
  * SAX Handler to handle a state:CommandList

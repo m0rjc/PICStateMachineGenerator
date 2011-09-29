@@ -1,4 +1,4 @@
-package m0rjc.ax25.generator.xmlDefinitionReader;
+package m0rjc.ax25.generator.xmlDefinitionReader.scriptElements;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -9,6 +9,11 @@ import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
+import m0rjc.ax25.generator.xmlDefinitionReader.TransitionSaxHandler;
+import m0rjc.ax25.generator.xmlDefinitionReader.TransitionSaxHandler.Callback;
+import m0rjc.ax25.generator.xmlDefinitionReader.commands.CommandListSaxHandler;
+import m0rjc.ax25.generator.xmlDefinitionReader.conditions.ConditionListSaxHandler;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 /**
  * Handler for the state:ScriptDefinition element
@@ -44,13 +49,11 @@ class ScriptSaxHandler extends ChainedSaxHandler
 			// The guard condition applies to the "current node". This is the node that is entered
 			// as a result of whatever transition we've just scripted, and the node that whatever
 			// we script next will come out of. A guard condition guards entry to this node.
-			setChild(m_conditionHandler);
-			m_conditionHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_conditionHandler, uri, localName, qName, attributes);
 		}
 		else if("Commands".equals(localName))
 		{
-			setChild(m_commandHandler);
-			m_commandHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_commandHandler, uri, localName, qName, attributes);
 		}
 		else if("Literal".equals(localName))
 		{
@@ -74,8 +77,7 @@ class ScriptSaxHandler extends ChainedSaxHandler
 		// but it will not be built.
 		m_nextNode = m_model.createNode();
 		m_choicesHandler.setDefaultTarget(m_nextNode.getStateName());
-		setChild(m_choicesHandler);
-		m_choicesHandler.startElement(uri, localName, qName, attributes);
+		startChild(m_choicesHandler, uri, localName, qName, attributes);
 	}
 
 	/** Add nodes to read a series of numbers. */

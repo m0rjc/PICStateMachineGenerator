@@ -1,9 +1,14 @@
 package m0rjc.ax25.generator;
 
-import javax.swing.WindowConstants;
+import javax.enterprise.event.Observes;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
-import m0rjc.ax25.generator.swingui.SwingRunner;
-import m0rjc.ax25.generator.xmlDefinitionReader.XmlDefinitionLoader;
+import m0rjc.ax25.generator.cdi.BatchProcessor;
+import m0rjc.ax25.generator.cdi.InteractiveProcessor;
+
+import org.jboss.weld.environment.se.StartMain;
+import org.jboss.weld.environment.se.events.ContainerInitialized;
 
 /**
  * Entry point to run the generator from the command line.
@@ -15,24 +20,36 @@ import m0rjc.ax25.generator.xmlDefinitionReader.XmlDefinitionLoader;
  */
 public class RunGenerator
 {
-	public static void main(String[] args)
+	@Inject
+	private Provider<InteractiveProcessor> m_interactiveProcessorProvider;
+	
+	@Inject
+	private Provider<BatchProcessor> m_batchProcessorProvider;
+	
+//	public static void main(String[] args)
+//	{
+//		StartMain weldMain = new StartMain(args);
+//		WeldContainer weld = weldMain.go();
+//	}
+	
+	public void run(@Observes ContainerInitialized initEvent)
 	{
+		String[] args = StartMain.getParameters();
 		if(args.length == 0)
 		{
 			runSwingInterface();
 		}
 		
-		XmlDefinitionLoader xmlDefinitionLoader = new XmlDefinitionLoader();
+		BatchProcessor batchRunner = m_batchProcessorProvider.get();
 		for(String input : args)
 		{
-			xmlDefinitionLoader.loadAndProcessDefinition(input);
+			batchRunner.loadAndProcessDefinition(input);
 		}
 	}
 
-	private static void runSwingInterface()
+	private void runSwingInterface()
 	{
-		SwingRunner swingRunner = new SwingRunner();
-		swingRunner.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		swingRunner.setVisible(true);
+		InteractiveProcessor swingRunner = m_interactiveProcessorProvider.get();
+		swingRunner.run();
 	}
 }

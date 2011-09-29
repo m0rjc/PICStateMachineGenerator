@@ -15,16 +15,19 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
+
+import m0rjc.ax25.generator.cdi.InteractiveProcessor;
 
 /**
  * A JFrame that allow the user to select a file and run it throuh the processor.
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
-public class SwingRunner extends JFrame
+public class SwingRunner extends JFrame implements InteractiveProcessor
 {
 	private static final long serialVersionUID = 1L;
 	private JTextField m_txtFileName;
@@ -41,6 +44,17 @@ public class SwingRunner extends JFrame
 		pack();
 		
 		m_fileChooser.setCurrentDirectory(new File("."));
+	}
+
+	/**
+	 * Run the interactive processor.
+	 * CDI application entry point.
+	 */
+	@Override
+	public void run()
+	{
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		setVisible(true);
 	}
 
 	private void layoutComponent()
@@ -68,7 +82,7 @@ public class SwingRunner extends JFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				run();
+				runProcess();
 			}
 		};
 		
@@ -126,7 +140,7 @@ public class SwingRunner extends JFrame
 	/**
 	 * Run the process
 	 */
-	void run()
+	void runProcess()
 	{
 		m_processWorker = new ProcessWorker(m_txtFileName.getText(), new ProcessWorkerListener() {
 			@Override

@@ -1,4 +1,7 @@
-package m0rjc.ax25.generator.xmlDefinitionReader;
+package m0rjc.ax25.generator.xmlDefinitionReader.framework;
+
+import javax.inject.Singleton;
+
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -7,6 +10,7 @@ import org.xml.sax.SAXException;
  * A Sax Handler that just ignores the branch it's in
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
+@Singleton
 class IgnoreBranchSaxHandler extends ChainedSaxHandler
 {
 	@Override

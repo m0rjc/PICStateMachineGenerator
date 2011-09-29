@@ -1,10 +1,17 @@
 package m0rjc.ax25.generator.xmlDefinitionReader;
 
+import javax.inject.Inject;
+
+import m0rjc.ax25.generator.cdi.GeneratorRunScoped;
 import m0rjc.ax25.generator.model.Command;
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Transition;
+import m0rjc.ax25.generator.xmlDefinitionReader.commands.CommandListSaxHandler;
+import m0rjc.ax25.generator.xmlDefinitionReader.conditions.ConditionListSaxHandler;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
+import m0rjc.ax25.generator.xmlDefinitionReader.scriptElements.ScriptSaxHandler;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -15,6 +22,7 @@ import org.xml.sax.SAXNotRecognizedException;
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
+@GeneratorRunScoped
 class NodeSaxHandler extends ChainedSaxHandler
 	implements ConditionListSaxHandler.Callback, CommandListSaxHandler.Callback, TransitionSaxHandler.Callback
 {
@@ -28,6 +36,7 @@ class NodeSaxHandler extends ChainedSaxHandler
 	private final TransitionSaxHandler m_transitionHandler;
 	private final ScriptSaxHandler m_scriptHandler;
 	
+	@Inject
 	public NodeSaxHandler(StateModel model)
 	{
 		m_model = model;
@@ -49,24 +58,20 @@ class NodeSaxHandler extends ChainedSaxHandler
 		}
 		else if("EntryConditions".equals(localName))
 		{
-			setChild(m_conditionListHandler);
-			m_conditionListHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_conditionListHandler, uri, localName, qName, attributes);
 		}
 		else if("EntryCommands".equals(localName))
 		{
-			setChild(m_commandListHandler);
-			m_commandListHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_commandListHandler, uri, localName, qName, attributes);
 		}
 		else if("Transition".equals(localName))
 		{
-			setChild(m_transitionHandler);
-			m_transitionHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_transitionHandler, uri, localName, qName, attributes);
 		}
 		else if("Script".equals(localName))
 		{
 			m_scriptHandler.setCurrentNode(m_currentNode);
-			setChild(m_scriptHandler);
-			m_scriptHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_scriptHandler, uri, localName, qName, attributes);
 		}
 		else
 		{

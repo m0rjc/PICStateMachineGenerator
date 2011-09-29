@@ -6,6 +6,7 @@ import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.simulatorBuilder.Simulation;
 import m0rjc.ax25.generator.simulatorBuilder.SimulationException;
 import m0rjc.ax25.generator.simulatorBuilder.SimulatorBuilder;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;

@@ -1,5 +1,10 @@
 package m0rjc.ax25.generator.xmlDefinitionReader;
 
+import javax.inject.Inject;
+
+import m0rjc.ax25.generator.cdi.GeneratorRunScoped;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
@@ -8,10 +13,17 @@ import org.xml.sax.SAXException;
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
+@GeneratorRunScoped
 class DefinitionSaxHandler extends ChainedSaxHandler
 {
-	private ModelSaxHandler m_modelHandler = new ModelSaxHandler();
-	private UnitTestSaxHandler m_testHandler = new UnitTestSaxHandler();
+	@Inject
+	private ModelSaxHandler m_modelHandler;
+	
+	@Inject
+	private UnitTestSaxHandler m_testHandler;
+	
+	@Inject
+	private OutputListSaxHandler m_outputHandler;
 	
 	@Override
 	protected void onStartElement(String uri, String localName, String qName,
@@ -19,21 +31,15 @@ class DefinitionSaxHandler extends ChainedSaxHandler
 	{
 		if("Model".equals(localName))
 		{
-			setChild(m_modelHandler);
-			m_modelHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_modelHandler, uri, localName, qName, attributes);
 		}
 		else if("UnitTests".equals(localName))
 		{
-			m_testHandler.setModel(m_modelHandler.getModel());
-			setChild(m_testHandler);
-			m_testHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_testHandler, uri, localName, qName, attributes);
 		}
 		else if("Output".equals(localName))
 		{
-			OutputListSaxHandler handler = new OutputListSaxHandler(m_modelHandler.getModel());
-			setChild(handler);
-			handler.startElement(uri, localName, qName, attributes);
+			startChild(m_outputHandler, uri, localName, qName, attributes);
 		}
 	}
-	
 }

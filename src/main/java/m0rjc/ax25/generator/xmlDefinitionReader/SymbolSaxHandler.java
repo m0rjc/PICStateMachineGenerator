@@ -1,9 +1,13 @@
 package m0rjc.ax25.generator.xmlDefinitionReader;
 
+import javax.inject.Inject;
+
+import m0rjc.ax25.generator.cdi.GeneratorRunScoped;
 import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Variable;
 import m0rjc.ax25.generator.model.Variable.Ownership;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -15,18 +19,16 @@ import org.xml.sax.SAXNotRecognizedException;
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
+@GeneratorRunScoped
 class SymbolSaxHandler extends ChainedSaxHandler
 {
 	/** Model under construction */
-	private final StateModel m_model;
+	@Inject
+	private StateModel m_model;
 	/** Variable under construction */
+	
 	private Variable m_variable;
 	
-	public SymbolSaxHandler(StateModel model)
-	{
-		m_model = model;
-	}
-
 	@Override
 	protected void onStartElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException

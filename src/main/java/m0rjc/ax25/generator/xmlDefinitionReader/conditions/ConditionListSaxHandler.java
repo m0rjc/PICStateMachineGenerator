@@ -1,4 +1,7 @@
-package m0rjc.ax25.generator.xmlDefinitionReader;
+package m0rjc.ax25.generator.xmlDefinitionReader.conditions;
+
+import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -7,12 +10,14 @@ import org.xml.sax.SAXNotRecognizedException;
 import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Variable;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 /**
  * SAX Handler to handle a state:ConditionList
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
+@Dependent
 class ConditionListSaxHandler extends ChainedSaxHandler
 {
 	/**
@@ -28,13 +33,22 @@ class ConditionListSaxHandler extends ChainedSaxHandler
 	private Callback m_callbackHandler;
 	private StateModel m_model;
 	
-	
-	public ConditionListSaxHandler(StateModel model, Callback callbackHandler)
+	@Inject
+	public ConditionListSaxHandler(StateModel model)
 	{
 		m_model = model;
-		m_callbackHandler = callbackHandler;
 	}
 	
+	public Callback getCallbackHandler()
+	{
+		return m_callbackHandler;
+	}
+
+	public void setCallbackHandler(Callback callbackHandler)
+	{
+		m_callbackHandler = callbackHandler;
+	}
+
 	@Override
 	protected void onStartElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException

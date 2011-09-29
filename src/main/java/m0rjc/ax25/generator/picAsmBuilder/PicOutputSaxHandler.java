@@ -1,7 +1,14 @@
-package m0rjc.ax25.generator.xmlDefinitionReader;
+package m0rjc.ax25.generator.picAsmBuilder;
 
+import java.util.logging.Logger;
+
+import javax.inject.Inject;
+
+import m0rjc.ax25.generator.cdi.GeneratorRunScoped;
+import m0rjc.ax25.generator.cdi.OutputTypeSaxHandler;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.picAsmBuilder.Pic18AsmBuilder;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -12,14 +19,22 @@ import org.xml.sax.SAXException;
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
-class PicOutputSaxHandler extends ChainedSaxHandler
+@GeneratorRunScoped
+@OutputTypeSaxHandler
+public class PicOutputSaxHandler extends ChainedSaxHandler
 {
+	@Inject
+	private Logger m_log;
+	
 	private final StateModel m_model;
 	private Pic18AsmBuilder m_builder;
 	
+	@Inject
 	public PicOutputSaxHandler(StateModel model)
 	{
 		m_model = model;
+		registerInterestInTagName("Pic18");
+		m_log.info("Pic18 Ouput Handler Initialised");
 	}
 
 	/** The builder instance that will be used to output the assembler */

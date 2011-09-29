@@ -1,9 +1,13 @@
 package m0rjc.ax25.generator.xmlDefinitionReader;
 
+import javax.inject.Inject;
+
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
+import m0rjc.ax25.generator.cdi.GeneratorRunScoped;
 import m0rjc.ax25.generator.model.StateModel;
+import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 /**
  * SAX handler that builds the Model for a State Generator Run.
@@ -11,16 +15,25 @@ import m0rjc.ax25.generator.model.StateModel;
  * 
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
+@GeneratorRunScoped
 class ModelSaxHandler extends ChainedSaxHandler
 {
-	/** Model being built by this Handler and its children */
+	/** 
+	 * Model being built by this Handler and its children.
+	 * Relying on StateModel being {@link GeneratorRunScoped} in CDI.
+	 */
+	@Inject
 	private StateModel m_model;
+	
 	/** Name of the input variable declared on the Model element */
 	private String m_inputVariableName;
 	/** Name of the root node declared on the Model element */
 	private String m_rootName;
 	
+	@Inject
 	private SymbolSaxHandler m_symbolHandler;
+	
+	@Inject
 	private NodeSaxHandler m_nodeHandler;
 	
 	@Override
@@ -33,13 +46,11 @@ class ModelSaxHandler extends ChainedSaxHandler
 		}
 		else if("Symbol".equals(localName))
 		{
-			setChild(m_symbolHandler);
-			m_symbolHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_symbolHandler, uri, localName, qName, attributes);
 		}
 		else if("Node".equals(localName))
 		{
-			setChild(m_nodeHandler);
-			m_nodeHandler.startElement(uri, localName, qName, attributes);
+			startChild(m_nodeHandler, uri, localName, qName, attributes);
 		}
 	}
 		
@@ -52,10 +63,7 @@ class ModelSaxHandler extends ChainedSaxHandler
 		String modelName = attributes.getValue("name");
 		m_rootName = attributes.getValue("root");
 		m_inputVariableName = attributes.getValue("inputVariable");
-		m_model = new StateModel(modelName);
-		
-		m_symbolHandler = new SymbolSaxHandler(m_model);
-		m_nodeHandler = new NodeSaxHandler(m_model);
+		m_model.setModelName(modelName);
 	}
 
 	@Override
