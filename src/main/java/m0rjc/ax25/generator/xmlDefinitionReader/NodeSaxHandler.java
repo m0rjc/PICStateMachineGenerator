@@ -1,5 +1,6 @@
 package m0rjc.ax25.generator.xmlDefinitionReader;
 
+import javax.enterprise.inject.New;
 import javax.inject.Inject;
 
 import m0rjc.ax25.generator.cdi.GeneratorRunScoped;
@@ -8,10 +9,7 @@ import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Transition;
-import m0rjc.ax25.generator.xmlDefinitionReader.commands.CommandListSaxHandler;
-import m0rjc.ax25.generator.xmlDefinitionReader.conditions.ConditionListSaxHandler;
 import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
-import m0rjc.ax25.generator.xmlDefinitionReader.scriptElements.ScriptSaxHandler;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -31,19 +29,22 @@ class NodeSaxHandler extends ChainedSaxHandler
 	/** The Node under construction */
 	private Node m_currentNode;
 	
-	private final ConditionListSaxHandler m_conditionListHandler;
-	private final CommandListSaxHandler m_commandListHandler;
-	private final TransitionSaxHandler m_transitionHandler;
-	private final ScriptSaxHandler m_scriptHandler;
+	@Inject @New
+	private ConditionListSaxHandler m_conditionListHandler;
+	@Inject @New
+	private CommandListSaxHandler m_commandListHandler;
+	@Inject @New
+	private TransitionSaxHandler m_transitionHandler;
+	@Inject @New
+	private ScriptSaxHandler m_scriptHandler;
 	
 	@Inject
 	public NodeSaxHandler(StateModel model)
 	{
 		m_model = model;
-		m_conditionListHandler = new ConditionListSaxHandler(model, this);
-		m_commandListHandler = new CommandListSaxHandler(model, this);
-		m_transitionHandler = new TransitionSaxHandler(model, this);
-		m_scriptHandler = new ScriptSaxHandler(model);
+		m_conditionListHandler.setCallbackHandler(this);
+		m_commandListHandler.setCallbackHandler(this);
+		m_transitionHandler.setCallbackHandler(this);
 	}
 	
 	@Override

@@ -11,7 +11,7 @@ import org.xml.sax.SAXException;
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
 @Singleton
-class IgnoreBranchSaxHandler extends ChainedSaxHandler
+public class IgnoreBranchSaxHandler extends ChainedSaxHandler
 {
 	@Override
 	protected void onStartElement(String uri, String localName, String qName, Attributes attributes) throws SAXException

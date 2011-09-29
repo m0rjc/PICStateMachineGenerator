@@ -1,11 +1,13 @@
 package m0rjc.ax25.generator.xmlDefinitionReader;
 
+import javax.enterprise.context.Dependent;
+import javax.enterprise.inject.New;
+import javax.inject.Inject;
+
 import m0rjc.ax25.generator.model.Command;
 import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Transition;
-import m0rjc.ax25.generator.xmlDefinitionReader.commands.CommandListSaxHandler;
-import m0rjc.ax25.generator.xmlDefinitionReader.conditions.ConditionListSaxHandler;
 import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 import org.xml.sax.Attributes;
@@ -21,22 +23,26 @@ import org.xml.sax.SAXException;
  * 
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
+@Dependent
 class TransitionSaxHandler extends ChainedSaxHandler implements ConditionListSaxHandler.Callback, CommandListSaxHandler.Callback
 {
 	private final StateModel m_model;
-	private final CommandListSaxHandler m_commandHandler;
-	private final ConditionListSaxHandler m_conditionHandler;
-	private final Callback m_callback;
+	@Inject @New
+	private CommandListSaxHandler m_commandHandler;
+	@Inject @New
+	private ConditionListSaxHandler m_conditionHandler;
+	
+	private Callback m_callback;
 
 	private Transition m_currentTransition;
 	private String m_defaultTarget;
 
-	public TransitionSaxHandler(StateModel model, Callback callback)
+	@Inject
+	public TransitionSaxHandler(StateModel model)
 	{
 		m_model = model;
-		m_callback = callback;
-		m_commandHandler = new CommandListSaxHandler(model, this);
-		m_conditionHandler = new ConditionListSaxHandler(model, this);
+		m_commandHandler.setCallbackHandler(this);
+		m_conditionHandler.setCallbackHandler(this);
 	}
 
 	public interface Callback
@@ -119,5 +125,10 @@ class TransitionSaxHandler extends ChainedSaxHandler implements ConditionListSax
 	public void setDefaultTarget(String stateName)
 	{
 		m_defaultTarget = stateName;
+	}
+
+	public void setCallbackHandler(Callback handler)
+	{
+		m_callback = handler;
 	}
 }

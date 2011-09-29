@@ -1,4 +1,7 @@
-package m0rjc.ax25.generator.xmlDefinitionReader.scriptElements;
+package m0rjc.ax25.generator.xmlDefinitionReader;
+
+import javax.enterprise.inject.New;
+import javax.inject.Inject;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -9,10 +12,6 @@ import m0rjc.ax25.generator.model.Precondition;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
-import m0rjc.ax25.generator.xmlDefinitionReader.TransitionSaxHandler;
-import m0rjc.ax25.generator.xmlDefinitionReader.TransitionSaxHandler.Callback;
-import m0rjc.ax25.generator.xmlDefinitionReader.commands.CommandListSaxHandler;
-import m0rjc.ax25.generator.xmlDefinitionReader.conditions.ConditionListSaxHandler;
 import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
 
 /**
@@ -20,24 +19,29 @@ import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
-class ScriptSaxHandler extends ChainedSaxHandler
+public class ScriptSaxHandler extends ChainedSaxHandler
 	implements TransitionSaxHandler.Callback, CommandListSaxHandler.Callback, ConditionListSaxHandler.Callback
 {
 	private final StateModel m_model;
-	private final CommandListSaxHandler m_commandHandler;
-	private final ConditionListSaxHandler m_conditionHandler;
+	
+	@Inject @New
+	private CommandListSaxHandler m_commandHandler;
+	@Inject @New
+	private ConditionListSaxHandler m_conditionHandler;
+	@Inject @New
+	private TransitionSaxHandler m_choicesHandler;
+
 	private Node m_currentNode;
 	/** Next node - following Choices */
 	private Node m_nextNode;
-	
-	private final TransitionSaxHandler m_choicesHandler;
 
+	@Inject
 	public ScriptSaxHandler(StateModel model)
 	{
 		m_model = model;
-		m_choicesHandler = new TransitionSaxHandler(model, this);
-		m_commandHandler = new CommandListSaxHandler(model, this);
-		m_conditionHandler = new ConditionListSaxHandler(model, this);
+		m_choicesHandler.setCallbackHandler(this);
+		m_commandHandler.setCallbackHandler(this);
+		m_conditionHandler.setCallbackHandler(this);
 	}
 
 	@Override

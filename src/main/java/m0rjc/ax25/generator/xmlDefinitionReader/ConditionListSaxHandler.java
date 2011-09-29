@@ -1,4 +1,4 @@
-package m0rjc.ax25.generator.xmlDefinitionReader.conditions;
+package m0rjc.ax25.generator.xmlDefinitionReader;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
@@ -18,7 +18,7 @@ import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
 @Dependent
-class ConditionListSaxHandler extends ChainedSaxHandler
+public class ConditionListSaxHandler extends ChainedSaxHandler
 {
 	/**
 	 * Callback interface for Condition creation.

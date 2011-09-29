@@ -1,4 +1,7 @@
-package m0rjc.ax25.generator.xmlDefinitionReader.commands;
+package m0rjc.ax25.generator.xmlDefinitionReader;
+
+import javax.enterprise.context.Dependent;
+import javax.inject.Inject;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -15,7 +18,8 @@ import m0rjc.ax25.generator.xmlDefinitionReader.framework.ChainedSaxHandler;
  *
  * @author Richard Corfield <m0rjc@raynet-uk.net>
  */
-class CommandListSaxHandler extends ChainedSaxHandler
+@Dependent
+public class CommandListSaxHandler extends ChainedSaxHandler
 {
 	/**
 	 * Callback interface for command creation
@@ -29,10 +33,10 @@ class CommandListSaxHandler extends ChainedSaxHandler
 	private Callback m_callbackHandler;
 	private StateModel m_model;
 
-	public CommandListSaxHandler(StateModel model, Callback callbackHandler)
+	@Inject
+	public CommandListSaxHandler(StateModel model)
 	{
 		m_model = model;
-		m_callbackHandler = callbackHandler;
 	}
 	
 	@Override
@@ -128,6 +132,11 @@ class CommandListSaxHandler extends ChainedSaxHandler
 		Variable v = m_model.getVariable(name);
 		if(v == null) throw new SAXException("Variable '" + v + "' not defined.");
 		return v;
+	}
+
+	public void setCallbackHandler(Callback handler)
+	{
+		m_callbackHandler = handler;
 	}
 
 }
