@@ -20,5 +20,6 @@ public interface IModel
 	/** Return the node with the given name */
 	Node getNode(String name);	
 	
-	
+	/** Does this model require a stack for subroutines? */
+	boolean requiresSubroutineStack();
 }

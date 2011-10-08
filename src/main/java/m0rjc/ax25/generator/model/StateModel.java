@@ -13,7 +13,7 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
 /**
  * The model used to build the state tree
  * 
- * @author Richard Corfield
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public class StateModel implements IModel
 {
@@ -299,11 +299,31 @@ public class StateModel implements IModel
 		return false;
 	}
 
+	
+	@Override
+	public boolean requiresSubroutineStack()
+	{
+		for (Node node : m_nodesByName.values())
+		{
+			if(node.requiresSubroutineStack()) return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Set the Initial Node for the model. This is the default node that each
+	 * node will return to if none of its transitions match.
+	 */
 	public void setRoot(Node node)
 	{
 		m_rootNode = node;
 	}
 
+	/**
+	 * Locate the ROM location with the given name.
+	 * @param name to look for
+	 * @return location, or null if not registered.
+	 */
 	public RomLocation getRomLocation(String name)
 	{
 		for(RomLocation l : m_externalRom)

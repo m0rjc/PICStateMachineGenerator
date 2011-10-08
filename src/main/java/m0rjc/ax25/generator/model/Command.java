@@ -4,12 +4,18 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
  * A command we can ask to be built.
- * 
  * Commands are immutable, so instances can be reused.
+ * 
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public abstract class Command
 {
-	public abstract void accept(IModelVisitor visitor);
+	/**
+	 * Render this command using the visitor.
+	 * @param model model being rendered
+	 * @param visitor that which shall render it.
+	 */
+	public abstract void accept(StateModel model, IModelVisitor visitor);
 
 	/**
 	 * Convenience method to create a Clear Value command
@@ -20,7 +26,7 @@ public abstract class Command
 	{
 		return new Command() {
 			@Override
-			public void accept(IModelVisitor visitor)
+			public void accept(StateModel model, IModelVisitor visitor)
 			{
 				visitor.visitCommandClearVariable(value);
 			}
@@ -36,7 +42,7 @@ public abstract class Command
 	{
 		return new Command() {
 			@Override
-			public void accept(IModelVisitor visitor)
+			public void accept(StateModel model, IModelVisitor visitor)
 			{
 				visitor.visitCommandClearIndexedVariable(value, indexer);
 			}
@@ -54,7 +60,7 @@ public abstract class Command
 	{
 		return new Command() {
 			@Override
-			public void accept(IModelVisitor visitor)
+			public void accept(StateModel model, IModelVisitor visitor)
 			{
 				visitor.visitCommandCopyVariable(input, output);
 			}
@@ -71,7 +77,7 @@ public abstract class Command
 	{
 		return new Command() {
 			@Override
-			public void accept(IModelVisitor visitor)
+			public void accept(StateModel model, IModelVisitor visitor)
 			{
 				visitor.visitCommandIncrementVariable(value);
 			}
@@ -86,7 +92,7 @@ public abstract class Command
 	{
 		return new Command() {
 			@Override
-			public void accept(IModelVisitor visitor)
+			public void accept(StateModel model, IModelVisitor visitor)
 			{
 				visitor.visitCommandCopyVariableToIndexedVariable(input, output, outputIndexer);
 			}
@@ -104,7 +110,7 @@ public abstract class Command
 	{
 		return new Command() {
 			@Override
-			public void accept(IModelVisitor visitor)
+			public void accept(StateModel model, IModelVisitor visitor)
 			{
 				visitor.visitCommandSetFlag(flags, flags.getBit(flagName), newValue);
 			}
@@ -122,10 +128,33 @@ public abstract class Command
 	{
 		return new Command() {
 			@Override
-			public void accept(IModelVisitor visitor)
+			public void accept(StateModel model, IModelVisitor visitor)
 			{
 				visitor.visitCommandMethodCall(method);
 			}		
 		};
+	}
+	
+	
+	/**
+	 * Create a command to make the state machine enter a subroutine.
+	 * The instruction after this command will be stored as the return address.
+	 * A command to go to the named node will be rendered.
+	 * 
+	 * @param stateName Node to call as a subroutine.
+	 * @return the Command instance giving that command.
+	 */
+	public static Command subroutine(String stateName)
+	{
+		return null;
+	}
+
+	/**
+	 * Does this command require the subroutine stack?
+	 * The default implementation returns false.
+	 */
+	public boolean requiresSubroutineStack()
+	{
+		return false;
 	}
 }

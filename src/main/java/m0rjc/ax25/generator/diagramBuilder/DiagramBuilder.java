@@ -15,7 +15,7 @@ import m0rjc.ax25.generator.visitor.INode;
 /**
  * Output a Graphviz diagram file from the model
  * 
- * @author Richard Corfield
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public class DiagramBuilder implements IModelVisitor
 {

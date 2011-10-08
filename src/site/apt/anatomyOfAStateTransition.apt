@@ -34,4 +34,23 @@ Skipping Node Entry Commands
  	set the array index to zero when first entered. By allowing a "transition to self" that does not process
  	that reset, it is possible to read the array without needing an additional state for subsequent bytes.
  	
- 
+Subroutines
+
+    Subroutines are implemented as Commands in the above model. This results in subroutines acting
+    as interruptions to normal transitions. A subroutine may be inserted in a transition or placed
+    as an entry command in a node.
+    
+    The state engine supports a single
+    stack level. Attempts to go deeper overwrite the stack. Attempts to return when not in a subroutine
+    will likely cause a crash or unexpected behaviour.
+    
+    The Enter Subroutine command stores the location of the next instruction on the stack.
+    It then renders a "Go to Node" command to switch to the subroutine as if it was the next
+    state.
+    
+    The Return from Subroutine command branches to the instruction located on the stack. This
+    will cause the transition that entered the subroutine to continue. Note that transitions
+    always render all preconditions before rendering commands. The means that it is not possible
+    to insert conditions after the subroutine returns before the target node is entered.
+~~ If we ever need to then we could consider a form of "immediate node" that renders its switching
+~~ code as a shared entry method.

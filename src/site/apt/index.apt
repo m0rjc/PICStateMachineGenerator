@@ -17,3 +17,17 @@ State Machine Generator for Microcontrollers
 * News and Announcements
 
     The state generator is still in early development.
+    
+** 8 Oct 2011
+
+    Subroutine code is well underway. The model and PIC18 builder are coded. The Simulator needs
+    the new code, and ought to work in a similar way to the PIC18 builder. Then I can unit test
+    it using the simulator.
+    
+    My lab power supply has died. Will see what I can do on battery power when it comes to
+    working on a proper PIC.
+    
+    I'll have to think what the subroutine idea would do to other languages. It's model is
+    based on assembler at the moment, but I expect it could be ported to a C language builder
+    if needed.
+    

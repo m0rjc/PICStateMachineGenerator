@@ -10,7 +10,8 @@ import m0rjc.ax25.generator.visitor.INode;
 
 /**
  * A node in a state model.
- * @author Richard Corfield
+ *
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public class Node implements INode
 {
@@ -344,6 +345,14 @@ public class Node implements INode
 	}
 
 	/**
+	 * Does this node have commands to run on entry?
+	 */
+	public boolean hasEntryCommands()
+	{
+		return !m_entryCode.isEmpty();
+	}
+	
+	/**
 	 * @see m0rjc.ax25.generator.visitor.INode#hasTransitions()
 	 */
 	@Override
@@ -370,13 +379,13 @@ public class Node implements INode
 			visitor.startNode(this);
 			for(Transition t : m_transitions)
 			{
-				t.accept(visitor, m_model);
+				t.accept(m_model, visitor);
 			}
 			if(isFallbackTransitionNeeded())
 			{
 				Transition t = new Transition();
 				t.goTo(m_model.getInitialState());
-				t.accept(visitor, m_model);
+				t.accept(m_model, visitor);
 			}
 			visitor.endNode(this);
 			
@@ -399,7 +408,7 @@ public class Node implements INode
 	 */
 	void renderGoToNode(IModelVisitor visitor, boolean ignoreTargetNodeEntry)
 	{
-		if(ignoreTargetNodeEntry)
+		if(ignoreTargetNodeEntry && hasEntryCommands())
 		{
 			visitor.visitTransitionGoToNode(this);
 		}
@@ -411,7 +420,7 @@ public class Node implements INode
 		{
 			for(Command c : getEntryCommands())
 			{
-				c.accept(visitor);
+				c.accept(m_model, visitor);
 			}
 			visitor.visitTransitionGoToNode(this);
 		}
@@ -428,7 +437,7 @@ public class Node implements INode
 		visitor.startSharedEntryCode(this);
 		for(Command c : m_entryCode)
 		{
-			c.accept(visitor);
+			c.accept(m_model, visitor);
 		}
 		visitor.visitTransitionGoToNode(this);
 	}
@@ -516,6 +525,24 @@ public class Node implements INode
 				rootNode.setUseSharedEntryCode();
 			}
 		}
+	}
+
+	/**
+	 * True if this Node uses the subroutine stack.
+	 */
+	public boolean requiresSubroutineStack()
+	{
+		for(Command c : m_entryCode)
+		{
+			if(c.requiresSubroutineStack()) return true;
+		}
+
+		for(Transition t : m_transitions)
+		{
+			if(t.requiresSubroutineStack()) return true;
+		}
+		
+		return false;
 	}
 
 }

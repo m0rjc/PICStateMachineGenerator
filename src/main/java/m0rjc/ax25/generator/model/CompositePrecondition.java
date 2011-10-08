@@ -6,7 +6,9 @@ import java.util.List;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
- * Composite pattern applied to Precondition
+ * Composite pattern applied to Precondition.
+ * 
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public class CompositePrecondition extends Precondition
 {

@@ -3,6 +3,7 @@ package m0rjc.ax25.generator.picAsmBuilder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,11 +31,17 @@ public class Pic18AsmBuilder implements IModelVisitor
 	/** Does this model use banked variables? */
 	private boolean m_hasBankedVariables;
 	
+	/** Does this model requires the subroutine stack? */
+	private boolean m_requiresSubroutineStack;
+	
 	/** Have we yet output our own GLOBALs */
 	private boolean m_hasOutputEntryPointGlobal;
 	
 	/** Variable that holds the state pointer */
 	private Variable m_statePointer;
+	
+	/** Variable that holds the subroutine stack. (Currently only 1 level deep) */
+	private Variable m_subroutineStack;
 	
 	/** Name of the model's initial state */
 	private INode m_rootState;
@@ -58,13 +65,19 @@ public class Pic18AsmBuilder implements IModelVisitor
 	private int m_currentBank = -1;
 	
 	/** Counter for creating transition label names */
-	private int m_transitionCounter = 0;
+	private int m_internalLabelCounter = 0;
 	
 	/** Model name, read from the model itself */
 	private String m_modelName;
 	
 	/** Base name for output files. Defaults to the model name. */
 	private String m_fileBaseName;
+	
+	/**
+	 * Labels in the code block stack. 
+	 * Used with {@link #push()}, {@link #pop()}, {@link #exitCodeBlock(int)} and related.
+	 */
+	private Stack<String> m_codeBlockStack = new Stack<String>();
 	
 	/**
 	 * Name of the current node. Used to optimise out code that would switch from
@@ -139,6 +152,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	{
 		m_modelName = model.getModelName();
 		m_rootState = model.getInitialState();
+		m_requiresSubroutineStack = model.requiresSubroutineStack();
 		
 		if(m_fileBaseName == null)
 		{
@@ -213,11 +227,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 		{
 			m_assembler.blankLine();
 			m_assembler.writeSection(m_modelName + "Acs", "UDATA_ACS");
-			if(m_statePointer == null)
-			{
-				m_statePointer = new Variable("_statePtr", Ownership.INTERNAL, Variable.ACCESS_BANK, m_largeRomModel ? 3 : 2);
-				visitCreateVariableDefinition(m_statePointer.getName(), m_statePointer.getSize());
-			}
+			buildInternalPointers(Variable.ACCESS_BANK);
 		}
 	}
 
@@ -295,11 +305,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 			m_assembler.blankLine();
 			m_assembler.writeComment("Please set up the linker to locate this block as required.");
 			m_assembler.writeSection(m_modelName + "Bank" + bankNumber, "UDATA");
-			if(m_statePointer == null)
-			{
-				m_statePointer = new Variable("_statePtr", Ownership.INTERNAL, bankNumber, m_largeRomModel ? 3 : 2);
-				visitCreateVariableDefinition(m_statePointer.getName(), m_statePointer.getSize());
-			}
+			buildInternalPointers(bankNumber);
 			
 			if(!m_hasBankedVariables)
 			{
@@ -307,6 +313,25 @@ public class Pic18AsmBuilder implements IModelVisitor
 				m_hasBankedVariables = true;
 			}
 		}		
+	}
+
+	/**
+	 * Define and output the internal pointer variables if not already done.
+	 * This is called during rendering of the bank identified in bankNumber.
+	 * @param bankNumber bank number to store them.
+	 */
+	private void buildInternalPointers(int bankNumber)
+	{
+		if(m_statePointer == null)
+		{
+			m_statePointer = new Variable("_statePtr", Ownership.INTERNAL, bankNumber, m_largeRomModel ? 3 : 2);
+			visitCreateVariableDefinition(m_statePointer.getName(), m_statePointer.getSize());
+		}
+		if(m_subroutineStack == null && m_requiresSubroutineStack)
+		{
+			m_subroutineStack = new Variable("_subReturn", Ownership.INTERNAL, bankNumber, m_largeRomModel ? 3 : 2);
+			visitCreateVariableDefinition(m_subroutineStack.getName(), m_subroutineStack.getSize());
+		}
 	}
 	
 	/**
@@ -367,6 +392,8 @@ public class Pic18AsmBuilder implements IModelVisitor
 	@Override
 	public void startSharedEntryCode(INode node)
 	{
+		assert m_codeBlockStack.empty() : "Code block stack not cleared by previous node";
+		
 		m_currentNodeName = null; // Do not allow matching
 		clearBankSel();
 		m_assembler.blankLine();
@@ -387,6 +414,8 @@ public class Pic18AsmBuilder implements IModelVisitor
 	 */
 	public void startNode(INode node)
 	{
+		assert m_codeBlockStack.empty() : "Code block stack not cleared by previous node";
+
 		clearBankSel();
 		m_assembler.blankLine();
 		m_assembler.startBlockComment();
@@ -402,27 +431,15 @@ public class Pic18AsmBuilder implements IModelVisitor
 	 */
 	public void visitTransition(Transition transition)
 	{
+		push();
 		m_assembler.writeComment("-- Start of transition --");
-		m_assembler.writeLabel(getNextTransitionLabel());
 		
 		// At the moment we don't cleverly work out routes through the 
 		// conditions, so if more than 1 bank is used we are paranoid and
 		// banksel after any branch.
 		if(m_numberOfBanksUsed > 1) clearBankSel();
-		
-		// Advances next transition label
-		m_transitionCounter++;
 	}
 
-	/** 
-	 * Get the lable for the transition referenced by m_transitionCounter.
-	 * This will be the next transition.
-	 * @return
-	 */
-	private String getNextTransitionLabel()
-	{
-		return "trans" + m_transitionCounter;
-	}
 	
 	/** Encode a transition precondition for Greater or Equals. Variable may need substitution */
 	public void visitTransitionPreconditionGE(Variable variable, int value)
@@ -433,7 +450,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 			banksel(variable);
 			m_assembler.opCode("MOVLW", formatInt(value - 1));
 			m_assembler.opCode("CPFSGT", variable.getName(), access(variable));
-			m_assembler.opCode("GOTO", getNextTransitionLabel());
+			exitCodeBlock(0);
 		}
 	}
 
@@ -444,7 +461,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 		banksel(variable);
 		m_assembler.opCode("MOVLW", formatInt(value));
 		m_assembler.opCode("CPFSEQ", variable.getName(), access(variable));
-		m_assembler.opCode("GOTO", getNextTransitionLabel());
+		exitCodeBlock(0);
 	}
 
 	/** Encode a transition precondition for Less than or Equals */
@@ -456,7 +473,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 			banksel(variable);
 			m_assembler.opCode("MOVLW", formatInt(value + 1));
 			m_assembler.opCode("CPFSLT", variable.getName(), access(variable));
-			m_assembler.opCode("GOTO", getNextTransitionLabel());
+			exitCodeBlock(0);
 		}
 	}
 
@@ -469,7 +486,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 		String opCode = expectedValue ? "BTFSS" : "BTFSC";
 		banksel(flag);
 		m_assembler.opCode(opCode,  offset(flag, offset), Integer.toString(bit), access(flag));
-		m_assembler.opCode("GOTO", getNextTransitionLabel());			
+		exitCodeBlock(0);
 	}
 		
 	/** Encode storing the input at the given variable+indexed offset location. */
@@ -585,13 +602,73 @@ public class Pic18AsmBuilder implements IModelVisitor
 		}
 	}
 	
+	@Override
+	public void visitTransitionReturnFromSubroutineStack()
+	{
+		gotoPointer(m_subroutineStack);
+	}
+	
+	@Override
+	public void endTransition(Transition transition)
+	{
+		pop();
+	}
+	
+	@Override
+	public void push()
+	{
+		m_codeBlockStack.push(getNextInternalLabel());
+	}
+	
+	/** 
+	 * Get the lable for the transition referenced by {@link #m_internalLabelCounter}.
+	 * This will be the label of the corresponding {@link #pop()}
+	 * @return
+	 */
+	private String getNextInternalLabel()
+	{
+		return "lbl_" + m_internalLabelCounter++;
+	}
+
+	/**
+	 * Save the label at the top of the code block stack to the subroutine stack.
+	 */
+	@Override
+	public void saveReturnOnSubroutineStack()
+	{
+		String label = m_codeBlockStack.peek();
+		setPointer(m_subroutineStack, label);
+	}
+
+	/**
+	 * Go to the end of the internal code block at the given depth, where 0 is current depth.
+	 * <strong>Other code assume this will happen in one instruction.</strong>
+	 */
+	@Override
+	public void exitCodeBlock(int levels)
+	{
+		String name = m_codeBlockStack.elementAt(m_codeBlockStack.size() - 1 - levels);
+		m_assembler.opCode("GOTO", name);
+	}
+
+	/**
+	 * End of an internal code block.
+	 */
+	@Override
+	public void pop()
+	{
+		String label = m_codeBlockStack.pop();
+		m_assembler.writeLabel(label);
+	}
+
 	/**
 	 * End of visiting a Node.
-	 * Write the fallthrough to the default state.
 	 * @param node
 	 */
+	@Override
 	public void endNode(Node node)
 	{
+		assert m_codeBlockStack.empty() : "Node " + m_currentNodeName + " did not leave code block stack empty";
 	}
 
 	/**

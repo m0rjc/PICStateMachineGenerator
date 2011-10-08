@@ -3,7 +3,9 @@ package m0rjc.ax25.generator.model;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
- * A precondition that checks the value of a flag
+ * A precondition that checks the value of a flag.
+ *
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public class FlagCheckPrecondition extends Precondition
 {

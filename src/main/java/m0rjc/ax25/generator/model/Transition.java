@@ -9,7 +9,7 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
 /**
  * A transition between states
  * 
- * @author Richard Corfield
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public class Transition
 {
@@ -141,7 +141,7 @@ public class Transition
 	 * Visit this transition. Does not recurse into the Node
 	 * @param visitor
 	 */
-	public void accept(IModelVisitor visitor, IModel model)
+	public void accept(StateModel model, IModelVisitor visitor)
 	{
 		visitor.visitTransition(this);
 		for(Precondition p : m_preconditions)
@@ -160,7 +160,7 @@ public class Transition
 
 		for(Command c : m_transitionCommands)
 		{
-			c.accept(visitor);
+			c.accept(model, visitor);
 		}
 		
 		if(!isOptimiseOutTargetNode(model))
@@ -218,5 +218,17 @@ public class Transition
 	public boolean acceptsAllInputs()
 	{
 		return m_preconditions.isEmpty();
+	}
+
+	/**
+	 * True if this Node uses the subroutine stack.
+	 */
+	public boolean requiresSubroutineStack()
+	{
+		for(Command c : m_transitionCommands)
+		{
+			if(c.requiresSubroutineStack()) return true;
+		}
+		return false;
 	}
 }

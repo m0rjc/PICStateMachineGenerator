@@ -7,7 +7,8 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
  * Composite pattern for Commands
- * @author Richard Corfield
+ *
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public class CompositeCommand extends Command
 {
@@ -33,8 +34,8 @@ public class CompositeCommand extends Command
 	}
 	
 	@Override
-	public void accept(IModelVisitor visitor)
+	public void accept(StateModel model, IModelVisitor visitor)
 	{
-		for(Command c : m_commands) c.accept(visitor);
+		for(Command c : m_commands) c.accept(model, visitor);
 	}
 }

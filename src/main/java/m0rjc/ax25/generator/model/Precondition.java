@@ -4,8 +4,9 @@ import m0rjc.ax25.generator.visitor.IModelVisitor;
 
 /**
  * A precondition that can be applied to a Transition.
- * 
  * Preconditions are immutable, so instances can be reused.
+ * 
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public abstract class Precondition
 {
