@@ -4,8 +4,8 @@ enum ActionResult
 {
 	/** Continue executing the Transition */
 	CONTINUE_TO_NEXT_ACTION,
-	/** GOTO the next transition */
-	NEXT_TRANSITION,
+	/** Exit the current level of the instruction block stack. */
+	POP,
 	/** RETURN from the state engine code */
 	RETURN_FROM_STATE_ENGINE
 }

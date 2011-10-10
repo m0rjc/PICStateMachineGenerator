@@ -3,7 +3,7 @@ package m0rjc.ax25.generator.simulatorBuilder;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SimulatedTransition
+public class SimulatedInstructionBlock extends SimulatedAction
 {
 	private List<SimulatedAction> m_actions = new ArrayList<SimulatedAction>();
 	
@@ -12,21 +12,30 @@ public class SimulatedTransition
 		m_actions.add(a);
 	}
 	
-	public ActionResult run() throws SimulationException
+	/**
+	 * RunFromId must recurse into all children
+	 */
+	@Override
+	public ActionResult runFromId(int id) throws SimulationException
 	{
 		for(SimulatedAction action : m_actions)
 		{
-			ActionResult result = action.run();
+			ActionResult result = action.runFromId(id);
 			switch(result)
 			{
-			case NEXT_TRANSITION:
+			case POP:
 				return result;
 			case RETURN_FROM_STATE_ENGINE:
 				return result;
 			}
 		}
-		
+	
 		return ActionResult.CONTINUE_TO_NEXT_ACTION;
 	}
 
+	@Override
+	public ActionResult run() throws SimulationException
+	{
+		return runFromId(-1);
+	}
 }

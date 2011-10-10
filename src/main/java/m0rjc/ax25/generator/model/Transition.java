@@ -1,7 +1,9 @@
 package m0rjc.ax25.generator.model;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import m0rjc.ax25.generator.visitor.IModel;
 import m0rjc.ax25.generator.visitor.IModelVisitor;
@@ -15,8 +17,6 @@ public class Transition
 {
 	/** One of targetNamedNode or targetNode will be set on construction to say where we're going */
 	private String m_targetNamedNode;
-	/** One of targetNamedNode or targetNode will be set on construction to say where we're going */
-	private Node m_targetNode;
 	/** Additional preconditions to allow entry to this transition */
 	private List<Precondition> m_preconditions = new ArrayList<Precondition>();
 	/** Additional commands to perform on transition */
@@ -31,23 +31,7 @@ public class Transition
 	public Transition()
 	{
 	}
-	
-	/**
-	 * Create a transition that will target the given named node.
-	 */
-	public Transition(String targetNamedNode)
-	{
-		m_targetNamedNode = targetNamedNode;
-	}
-
-	/**
-	 * Create a transition that targets the given node.
-	 */
-	public Transition(Node targetNode)
-	{
-		m_targetNode = targetNode;
-	}
-	
+		
 	/**
 	 * Create a precondition for equality
 	 */
@@ -91,17 +75,8 @@ public class Transition
 	 */
 	public Transition goTo(Node targetNode)
 	{
-		m_targetNode = targetNode;
+		goTo(targetNode.getStateName());
 		return this;
-	}
-
-	
-	/**
-	 * The node this points to, if defined.
-	 */
-	public Node getNode()
-	{
-		return m_targetNode;
 	}
 	
 	/**
@@ -111,10 +86,6 @@ public class Transition
 	 */
 	public Node getNode(IModel model)
 	{
-		if(m_targetNode != null)
-		{
-			return m_targetNode;
-		}
 		return model.getNode(m_targetNamedNode);
 	}
 
@@ -123,7 +94,7 @@ public class Transition
 	 */
 	public String getTargetNodeName()
 	{
-		return m_targetNode != null ? m_targetNode.getStateName() : m_targetNamedNode;
+		return m_targetNamedNode;
 	}
 	
 	/**
@@ -163,27 +134,8 @@ public class Transition
 			c.accept(model, visitor);
 		}
 		
-		if(!isOptimiseOutTargetNode(model))
-		{
-			node.renderGoToNode(visitor, m_ignoreTargetNodeEntry);
-		}
-		else // It's an End State, so reset
-		{
-			model.getInitialState().renderGoToNode(visitor, m_ignoreTargetNodeEntry);
-		}
-	}
-
-	/**
-	 * Should we optimise out the target node, instead mapping it to the root node?
-	 * @param model
-	 * @return
-	 */
-	public boolean isOptimiseOutTargetNode(IModel model)
-	{
-		Node node = getNode(model);
-		// A node with entry commands and without shared entry code will have its
-		// entry commands included in the incoming transition code.
-		return !node.hasTransitions() && !node.isUseSharedEntryCode();
+		node.renderGoToNode(visitor, m_ignoreTargetNodeEntry);
+		visitor.endTransition(this);
 	}
 	
 	/**
@@ -230,5 +182,21 @@ public class Transition
 			if(c.requiresSubroutineStack()) return true;
 		}
 		return false;
+	}
+
+	/**
+	 * Return all nodes this transition references. These are its own target and any
+	 * gosubs.
+	 */
+	public Iterable<String> getAllTargetNodeNames()
+	{
+		Set<String> result = new HashSet<String>();
+		result.add(getTargetNodeName());
+		for(Command c : m_transitionCommands)
+		{
+			String name = c.getTargetNode();
+			if(name != null) result.add(name);
+		}
+		return result;
 	}
 }

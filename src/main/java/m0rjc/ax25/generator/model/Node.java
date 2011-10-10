@@ -71,7 +71,9 @@ public class Node implements INode
 	public Node addString(String string) 
 	{
 		char ch = string.charAt(0);
-		Node node = getOrCreateTransition(ch).getNode();
+		Transition t = getOrCreateTransition(ch);
+		Node node = m_model.getNode(t.getTargetNodeName());
+
 		if(string.length() > 1)
 		{
 			return node.addString(string.substring(1));
@@ -96,8 +98,9 @@ public class Node implements INode
 			}
 		}
 		
-		Transition t = new Transition(m_model.createNode())
-			.whenEqual(input, ch);
+		Transition t = new Transition()
+			.whenEqual(input, ch)
+			.goTo(m_model.createNode());
 		
 		m_transitions.add(t);
 		return t;
@@ -109,7 +112,7 @@ public class Node implements INode
 	 */
 	private Transition createEmptyTransitionToNewNode()
 	{
-		Transition transition = new Transition(m_model.createNode());
+		Transition transition = new Transition().goTo(m_model.createNode());
 		m_transitions.add(transition);
 		return transition;
 	}
@@ -120,7 +123,7 @@ public class Node implements INode
 	 */
 	public Transition createSelfTransition()
 	{
-		Transition transition = new Transition(this);
+		Transition transition = new Transition().goTo(this);
 		m_transitions.add(transition);
 		return transition;
 	}
@@ -149,15 +152,15 @@ public class Node implements INode
 	 */
 	public Node skipToCommaElse(Transition... alternatePaths)
 	{
-		Node exitNode = createEmptyTransitionToNewNode()
+		String exitNode = createEmptyTransitionToNewNode()
 			.whenEqual(m_model.getInputVariable(), ',')
-			.getNode();
+			.getTargetNodeName();
 
 		addChoices(alternatePaths);
 		
 		createSelfTransition();
 
-		return exitNode;
+		return m_model.getNode(exitNode);
 	}
 	
 	/**
@@ -224,37 +227,42 @@ public class Node implements INode
 		else if(min == 1)
 		{
 			// Any numbers allow us to exit
-			exitNode = createEmptyTransitionToNewNode()
+			Transition t = createEmptyTransitionToNewNode()
 				.when(condition)
-				.doCommand(storeCommand)
-				.getNode();
+				.doCommand(storeCommand);
+			exitNode = m_model.getNode(t.getTargetNodeName());
 		}
 		else if(min == max && m_transitions.isEmpty())
 		{
+			Transition t;
 			// We can stay on the start node until we hit max. It's a generalisation
 			// that fails if there are non-number transitions, but in my examples I don't
 			// do that so will take advantage of optimising out one state.
-			createSelfTransition()
+			t = createSelfTransition()
 				.ignoreTargetNodeEntry()
 				.when(condition)
 				.when(Precondition.lessThan(counter, max - 1))
-				.doCommand(storeCommand)
-				.getNode();
+				.doCommand(storeCommand);
+
+			exitNode = m_model.getNode(t.getTargetNodeName());
 			
-			exitNode = createEmptyTransitionToNewNode()
+			t = createEmptyTransitionToNewNode()
 				.when(condition)
 				.when(Precondition.equals(counter, max - 1))
-				.doCommand(storeCommand)
-				.getNode();
+				.doCommand(storeCommand);
+			
+			exitNode = m_model.getNode(t.getTargetNodeName());
 		}
 		else
 		{
+			Transition t;
 			// First number takes us into a state where we start collecting numbers until we reach the minimum
-			Node numbersNode = createEmptyTransitionToNewNode()
+			t = createEmptyTransitionToNewNode()
 							.when(condition)
 							.when(VariableValuePrecondition.createLE(counter, min - 2))
-							.doCommand(storeCommand)
-							.getNode();
+							.doCommand(storeCommand);
+
+			Node numbersNode = m_model.getNode(t.getTargetNodeName());
 
 			// Subsequent numbers less than min keep us in this state
 			if(min > 2)
@@ -266,11 +274,12 @@ public class Node implements INode
 			}
 			
 			// Once we hit min then we can go to the exit state
-			exitNode = numbersNode.createEmptyTransitionToNewNode()
+			t = numbersNode.createEmptyTransitionToNewNode()
 						   .when(condition)
 						   .when(VariableValuePrecondition.createGE(counter, min - 1))
-						   .doCommand(storeCommand)
-						   .getNode();
+						   .doCommand(storeCommand);
+			
+			exitNode = m_model.getNode(t.getTargetNodeName());
 		}
 
 		if(max > min)
@@ -284,6 +293,17 @@ public class Node implements INode
 		return exitNode;
 	}
 
+	/**
+	 * Build the command needed as part of an
+	 * {@link #addInputClassSequence(Precondition, int, int, Variable) input class sequence}
+	 * that will store the value in the right place and increment the counter.
+	 * 
+	 * @param input input variable
+	 * @param storage where to store the value. May be null to not store.
+	 * @param counter position counter within the variable
+	 * @param requiresNullTerminatedString if true then the next space will be set to null.
+	 * @return the storage command.
+	 */
 	private CompositeCommand buildStoreCommand(Variable input,
 			Variable storage, Variable counter,
 			boolean requiresNullTerminatedString)
@@ -371,42 +391,108 @@ public class Node implements INode
 	{
 		if(seenNodes.add(getStateName()))
 		{
-			if(isUseSharedEntryCode())
+			if(isScriptEndPoint())
 			{
-				renderSharedEntryCode(visitor);
+				acceptAsScriptEndPoint(seenNodes, visitor);
 			}
-			
-			visitor.startNode(this);
-			for(Transition t : m_transitions)
+			else
 			{
-				t.accept(m_model, visitor);
+				acceptAsNodeWithTransitions(seenNodes, visitor);
 			}
-			if(isFallbackTransitionNeeded())
-			{
-				Transition t = new Transition();
-				t.goTo(m_model.getInitialState());
-				t.accept(m_model, visitor);
-			}
-			visitor.endNode(this);
-			
-			for(Transition t : m_transitions)
-			{
-				if(!t.isOptimiseOutTargetNode(m_model))
-				{
-					Node n = t.getNode(m_model);
-					n.accept(seenNodes, visitor);
-				}
-			}
-			
 		}
 	}
 
 	/**
+	 * Build this node as a node with outgoing transitions.
+	 * This is used if not {@link #isScriptEndPoint()}.
+	 * 
+	 * See {@link #renderGoToThisNode(IModelVisitor, boolean)} which works in tandem with
+	 * this method.
+	 * 
+	 * @param seenNodes
+	 * @param visitor
+	 */
+	private void acceptAsNodeWithTransitions(Set<String> seenNodes, IModelVisitor visitor)
+	{
+		if(isUseSharedEntryCode())
+		{
+			renderSharedEntryCode(visitor);
+		}
+		
+		visitor.startNode(this);
+		for(Transition t : m_transitions)
+		{
+			t.accept(m_model, visitor);
+		}
+		
+		if(isFallbackTransitionNeeded())
+		{
+			Transition t = new Transition();
+			t.goTo(m_model.getInitialState());
+			t.accept(m_model, visitor);
+		}
+		visitor.endNode(this);
+		
+		// Ask target nodes to render themselves.
+		for(Transition t : m_transitions)
+		{
+			for (String targetName : t.getAllTargetNodeNames())
+			{
+				Node n = m_model.getNode(targetName);
+				n.accept(seenNodes, visitor);
+			}
+		}
+	}
+
+	/**
+	 * Optionally build this node. It is a script end point.
+	 * Script end points normally direct straight to the root node.
+	 * It will only be rendered if there is shared code that needs rendering.
+	 * See {@link #renderGoToRootNode(IModelVisitor, boolean)}, which works in
+	 * tandem with this method.
+	 * 
+	 * This is used if {@link #isScriptEndPoint()}.
+	 * 
+	 * @param seenNodes
+	 * @param visitor
+	 */
+	private void acceptAsScriptEndPoint(Set<String> seenNodes, IModelVisitor visitor)
+	{
+		if(isUseSharedEntryCode() && hasEntryCommands())
+		{
+			renderSharedEntryCode(visitor);
+		}
+	}
+
+	
+	/**
 	 * Render the code to switch to this node as part of a transition.
+	 * If this is a {@link #isScriptEndPoint()} then render code to switch to the 
+	 * root node instead.
+	 * 
 	 * @param visitor
 	 * @param ignoreTargetNodeEntry true if this transition must ignore the node's entry code.
 	 */
 	void renderGoToNode(IModelVisitor visitor, boolean ignoreTargetNodeEntry)
+	{
+		if(isScriptEndPoint())
+		{
+			renderGoToRootNode(visitor, ignoreTargetNodeEntry);
+		}
+		else
+		{
+			renderGoToThisNode(visitor, ignoreTargetNodeEntry);
+		}
+	}
+	
+	
+	/**
+	 * Render the code to switch to this node as part of a transition.
+	 * 
+	 * @param visitor
+	 * @param ignoreTargetNodeEntry true if this transition must ignore the node's entry code.
+	 */
+	private void renderGoToThisNode(IModelVisitor visitor, boolean ignoreTargetNodeEntry)
 	{
 		if(ignoreTargetNodeEntry && hasEntryCommands())
 		{
@@ -426,7 +512,51 @@ public class Node implements INode
 		}
 	}
 
+	/**
+	 * Render the code to switch to the root node as part of a transition.
+	 * This node may have entry commands which need to be rendered first.
+	 * 
+	 * @param visitor
+	 * @param ignoreTargetNodeEntry true if this transition must ignore the node's entry code.
+	 */
+	private void renderGoToRootNode(IModelVisitor visitor, boolean ignoreTargetNodeEntry)
+	{
+		Node rootNode = m_model.getInitialState();
+		
+		if(ignoreTargetNodeEntry && hasEntryCommands())
+		{
+			visitor.visitTransitionGoToNode(rootNode);
+		}
+		else if(isUseSharedEntryCode() && hasEntryCommands())
+		{
+			visitor.visitTransitionGoToSharedEntryCode(this);
+		}
+		else
+		{
+			for(Command c : getEntryCommands())
+			{
+				c.accept(m_model, visitor);
+			}
+			// Direct call prevents an infinite loop in the case of an empty model.
+			rootNode.renderGoToThisNode(visitor, ignoreTargetNodeEntry);
+		}
+	}
+
 	
+	/**
+	 * Nodes left at the end of scripts should be replaced by a jump to the start node.
+	 * We derive this because such nodes have no outgoing transitions.
+	 * This will also capture Numbers Nodes that have been left dangling.
+	 * Such a node may still have entry commands.
+	 * 
+	 * @param model
+	 * @return
+	 */
+	public boolean isScriptEndPoint()
+	{
+		return m_transitions.isEmpty();
+	}
+
 	/**
 	 * Render the shared entry code for the node.
 	 * This is the code that is GOTO by any transition to enter this node.
@@ -439,7 +569,16 @@ public class Node implements INode
 		{
 			c.accept(m_model, visitor);
 		}
-		visitor.visitTransitionGoToNode(this);
+		
+		if(!isScriptEndPoint())
+		{
+			visitor.visitTransitionGoToNode(this);
+		}
+		else
+		{
+			// Script end point jumps straight to the root node.
+			m_model.getInitialState().renderGoToThisNode(visitor, false);
+		}
 	}
 
 	/** Return the preconditions for entry to this node */
@@ -499,19 +638,21 @@ public class Node implements INode
 		for(Transition t : m_transitions)
 		{
 			// Don't count self transitions as they use shorter code
-			String targetName = t.getTargetNodeName();
-			if(targetName != getStateName())
+			for(String targetName : t.getAllTargetNodeNames())
 			{
-				Node targetNode = m_model.getNode(targetName);
-				if(targetNode != null)
+				if(targetName != getStateName())
 				{
-					if(!seenEntries.add(targetName))
+					Node targetNode = m_model.getNode(targetName);
+					if(targetNode != null)
 					{
-						targetNode.setUseSharedEntryCode();
-					}
-					else
-					{
-						targetNode.setSharedEntryCodeOnMultipleEntryNodes(seenEntries);
+						if(!seenEntries.add(targetName))
+						{
+							targetNode.setUseSharedEntryCode();
+						}
+						else
+						{
+							targetNode.setSharedEntryCodeOnMultipleEntryNodes(seenEntries);
+						}
 					}
 				}
 			}

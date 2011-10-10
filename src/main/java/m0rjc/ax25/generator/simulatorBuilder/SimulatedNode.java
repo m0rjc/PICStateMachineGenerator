@@ -1,22 +1,20 @@
 package m0rjc.ax25.generator.simulatorBuilder;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class SimulatedNode
 {
 	private final String m_name;
-	private List<SimulatedTransition> m_transitions = new ArrayList<SimulatedTransition>();
-	private List<SimulatedAction> m_sharedEntryCode = null;
+	private SimulatedInstructionBlock m_stepCode = new SimulatedInstructionBlock();
+	private SimulatedInstructionBlock m_sharedEntryCode = null;
 	
 	SimulatedNode(String name)
 	{
 		m_name = name;
 	}
 	
-	void addTransition(SimulatedTransition t)
+	void addTransition(SimulatedAction t)
 	{
-		m_transitions.add(t);
+		m_stepCode.addAction(t);
 	}
 	
 	/**
@@ -24,7 +22,7 @@ public class SimulatedNode
 	 */
 	public void declareSharedEntryCode()
 	{
-		m_sharedEntryCode = new ArrayList<SimulatedAction>();
+		m_sharedEntryCode = new SimulatedInstructionBlock();
 	}
 
 	/**
@@ -34,6 +32,23 @@ public class SimulatedNode
 	{
 		return m_sharedEntryCode != null;
 	} 
+	
+	/**
+	 * Return the shared entry code block.
+	 * This will be null if {@link #declareSharedEntryCode()} has not been called.
+	 */
+	public SimulatedInstructionBlock getSharedEntryCode()
+	{
+		return m_sharedEntryCode;
+	}
+	
+	/**
+	 * Return the step code block.
+	 */
+	public SimulatedInstructionBlock getStepCode()
+	{
+		return m_stepCode;
+	}
 	
 	/**
 	 * Add an action to the shared entry code for this node.
@@ -49,7 +64,7 @@ public class SimulatedNode
 		{
 			throw new SimulationException("Builder attempting to add shared actions without declaring shared entry");
 		}
-		m_sharedEntryCode.add(a);
+		m_sharedEntryCode.addAction(a);
 	}
 
 	/**
@@ -64,18 +79,15 @@ public class SimulatedNode
 			throw new SimulationException("Attempt to call shared entry code on a node without shared entry code.");
 		}
 		
-		ActionResult result = ActionResult.CONTINUE_TO_NEXT_ACTION;
-		for(SimulatedAction a : m_sharedEntryCode)
+		ActionResult result = m_sharedEntryCode.run();
+		
+		if(result == ActionResult.RETURN_FROM_STATE_ENGINE)
 		{
-			result = a.run();
-			if(result == ActionResult.RETURN_FROM_STATE_ENGINE)
-			{
-				return result;
-			}
-			else if(result == ActionResult.NEXT_TRANSITION)
-			{
-				throw new SimulationException("Shared entry code atttempted 'go to next transition'");
-			}
+			return result;
+		}
+		else if(result == ActionResult.POP)
+		{
+			throw new SimulationException("Shared entry code atttempted 'go to next transition'");
 		}
 		throw new SimulationException("Shared entry code did not terminate");
 	}
@@ -88,32 +100,49 @@ public class SimulatedNode
 	{
 		Log.fine(String.format("Node %s performing step", m_name));
 		
-		for(SimulatedTransition t : m_transitions)
+		ActionResult result;
+		try 
 		{
-			Log.finest(String.format("Node %s starting transition", m_name));
-			ActionResult result;
-			try {
-				result = t.run();
-				Log.finer(String.format("Node %s transition returned %s", m_name, result.name()));
-			} catch (SimulationException e) {
-				throw new SimulationException("Exception in Node " + m_name, e);
-			}
-			
-			switch(result)
-			{
-			case CONTINUE_TO_NEXT_ACTION:
-				// Probably a bug in this simulator
-				throw new SimulationException("Node " + m_name + " transition fell through");
-			case RETURN_FROM_STATE_ENGINE:
-				return;
-			case NEXT_TRANSITION:
-				Log.fine("  Next transition");
-			}
+			result = m_stepCode.run();
+		} 
+		catch (SimulationException e) 
+		{
+			throw new SimulationException("Exception in Node " + m_name, e);
 		}
-		
-		throw new SimulationException("Node " + m_name + " did not RETURN.");
+
+		if(result != ActionResult.RETURN_FROM_STATE_ENGINE)
+		{
+			throw new SimulationException("Node " + m_name + " transition fell through");
+		}			
 	}
 
+	/**
+	 * Execute a step starting from the given instruction Id.
+	 * Used when returning from a subroutine.
+	 * @param instructionId
+	 * @throws SimulationException
+	 */
+	public void stepFromInstructionId(int instructionId) throws SimulationException
+	{
+		Log.fine(String.format("Node %s resuming step from instruction Id %d", m_name, instructionId));
+		
+		ActionResult result;
+		try 
+		{
+			result = m_stepCode.runFromId(instructionId);
+		} 
+		catch (SimulationException e) 
+		{
+			throw new SimulationException("Exception in Node " + m_name, e);
+		}
+
+		if(result != ActionResult.RETURN_FROM_STATE_ENGINE)
+		{
+			throw new SimulationException("Node " + m_name + " transition fell through");
+		}			
+	}
+
+	
 	/**
 	 * Return the state name for this node
 	 * @return
@@ -122,5 +151,4 @@ public class SimulatedNode
 	{
 		return m_name;
 	}
-
 }

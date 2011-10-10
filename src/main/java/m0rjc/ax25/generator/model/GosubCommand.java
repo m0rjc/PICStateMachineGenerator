@@ -35,6 +35,12 @@ public class GosubCommand extends Command
 		return true;
 	}
 	
+	@Override
+	public String getTargetNode()
+	{
+		return m_targetStateName;
+	}
+
 	private Node getNode(StateModel model)
 	{
 		return model.getNode(m_targetStateName);

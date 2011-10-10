@@ -90,7 +90,7 @@ class TransitionSaxHandler extends ChainedSaxHandler implements ConditionListSax
 			target = m_defaultTarget;
 		}
 		
-		m_currentTransition = new Transition(target);
+		m_currentTransition = new Transition();
 		
 		if(input != null && input.length() > 0)
 		{
@@ -101,6 +101,7 @@ class TransitionSaxHandler extends ChainedSaxHandler implements ConditionListSax
 			}
 		}
 		
+		m_currentTransition.goTo(target);
 	}
 
 	@Override

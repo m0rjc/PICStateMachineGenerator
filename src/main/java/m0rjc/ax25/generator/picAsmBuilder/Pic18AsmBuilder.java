@@ -73,6 +73,12 @@ public class Pic18AsmBuilder implements IModelVisitor
 	/** Base name for output files. Defaults to the model name. */
 	private String m_fileBaseName;
 	
+	/** The current node has subroutine calls.
+	 * This means that we cannot guarantee that the state pointer points to this node, so
+	 * SELF transitions must be encoded explicitly.
+	 */
+	private boolean m_nodeHasSubroutineCalls;
+	
 	/**
 	 * Labels in the code block stack. 
 	 * Used with {@link #push()}, {@link #pop()}, {@link #exitCodeBlock(int)} and related.
@@ -423,6 +429,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 		m_assembler.endBlockComment();
 		m_assembler.writeLabel(getNodeStepLabel(node.getStateName()));
 		m_currentNodeName = node.getStateName();
+		m_nodeHasSubroutineCalls = false;
 	}
 
 	/**
@@ -579,7 +586,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	{
 		String stateName = node.getStateName();
 
-		if(!stateName.equals(m_currentNodeName))
+		if(m_nodeHasSubroutineCalls || !stateName.equals(m_currentNodeName))
 		{
 			m_assembler.writeComment(" Transition GOTO " + stateName);
 			setPointer(m_statePointer, getNodeStepLabel(stateName));
@@ -638,6 +645,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	{
 		String label = m_codeBlockStack.peek();
 		setPointer(m_subroutineStack, label);
+		m_nodeHasSubroutineCalls = true;
 	}
 
 	/**

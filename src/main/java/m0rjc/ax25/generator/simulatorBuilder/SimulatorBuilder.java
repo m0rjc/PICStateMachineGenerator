@@ -1,6 +1,6 @@
 package m0rjc.ax25.generator.simulatorBuilder;
 
-import java.util.logging.Level;
+import java.util.Stack;
 
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.RomLocation;
@@ -12,22 +12,18 @@ import m0rjc.ax25.generator.visitor.INode;
 
 /**
  * Build a simulator following instructions from the model.
- * @author Richard
+ * @author Richard Corfield <m0rjc@m0rjc.me.uk>
  */
 public class SimulatorBuilder implements IModelVisitor
 {
-	/** What we are currently building */
-	private enum Building { NODE_SHARED_ENTRY, TRANSITION };
-	
-	private Building m_nowBuilding;
-	
 	private Simulation m_simulation = new Simulation();
 	private SimulatedNode m_currentNode;
-	private SimulatedTransition m_currentTransition;
 	private SimulatedVariable m_currentVariable;
 	private String m_rootNodeName;
+	private boolean m_nextPopMustAddLocationToSubroutineStack;
 	
-
+	private Stack<SimulatedInstructionBlock> m_instructionBlockStack = new Stack<SimulatedInstructionBlock>();
+	
 	public void registerSpecialFunctionRegister(String name)
 	{
 		m_simulation.addVariable(new SimulatedVariable(name, 1));
@@ -123,11 +119,19 @@ public class SimulatorBuilder implements IModelVisitor
 	{
 		SimulatedNode sim = initialiseNode(node);
 		sim.declareSharedEntryCode();
-		m_nowBuilding = Building.NODE_SHARED_ENTRY;
+		m_instructionBlockStack.add(sim.getSharedEntryCode());
 	}
 
+	/**
+	 * Initialse a Node, whether we're building shared entry or step code.
+	 * @param node
+	 * @return
+	 */
 	private SimulatedNode initialiseNode(INode node)
 	{
+		assert m_instructionBlockStack.empty() : "Previous node did not empty the instruction block stack";
+		assert !m_nextPopMustAddLocationToSubroutineStack : "Previous node jumped to a subroutine but did not save a return address";
+		
 		m_currentNode = m_simulation.getNode(node.getStateName());
 		if(m_currentNode == null)
 		{
@@ -153,8 +157,8 @@ public class SimulatorBuilder implements IModelVisitor
 	 */
 	public void startNode(INode node)
 	{
-		initialiseNode(node);
-		m_nowBuilding = Building.TRANSITION;
+		SimulatedNode sim = initialiseNode(node);
+		m_instructionBlockStack.add(sim.getStepCode());
 	}
 
 	/**
@@ -163,8 +167,17 @@ public class SimulatorBuilder implements IModelVisitor
 	 */
 	public void visitTransition(Transition transition)
 	{
-		m_currentTransition = new SimulatedTransition();
-		m_currentNode.addTransition(m_currentTransition);
+		push();
+		m_currentNode.addTransition(getCurrentInstructionBlock());
+	}
+	
+	/**
+	 * Return the instruction block currently being worked on.
+	 * @return
+	 */
+	private SimulatedInstructionBlock getCurrentInstructionBlock()
+	{
+		return m_instructionBlockStack.peek();
 	}
 	
 	/** Encode a transition precondition for Greater or Equals. Variable may need substitution */
@@ -183,7 +196,7 @@ public class SimulatorBuilder implements IModelVisitor
 				
 				if(actualValue >= expectedValue)
 					return ActionResult.CONTINUE_TO_NEXT_ACTION;
-				return ActionResult.NEXT_TRANSITION;
+				return ActionResult.POP;
 			}
 		});
 	}
@@ -204,7 +217,7 @@ public class SimulatorBuilder implements IModelVisitor
 				
 				if(actualValue == expectedValue)
 					return ActionResult.CONTINUE_TO_NEXT_ACTION;
-				return ActionResult.NEXT_TRANSITION;
+				return ActionResult.POP;
 			}
 		});
 	}
@@ -225,7 +238,7 @@ public class SimulatorBuilder implements IModelVisitor
 
 				if(simulation.getVariable(name).getValue() <= expectedValue)
 					return ActionResult.CONTINUE_TO_NEXT_ACTION;
-				return ActionResult.NEXT_TRANSITION;
+				return ActionResult.POP;
 			}
 		});		
 	}
@@ -245,7 +258,7 @@ public class SimulatorBuilder implements IModelVisitor
 				
 				if(actualValue == expectedValue)
 					return ActionResult.CONTINUE_TO_NEXT_ACTION;
-				return ActionResult.NEXT_TRANSITION;
+				return ActionResult.POP;
 			}
 		});				
 	}
@@ -431,6 +444,74 @@ public class SimulatorBuilder implements IModelVisitor
 			}
 		});				
 	}
+	
+	@Override
+	public void push()
+	{
+		m_instructionBlockStack.add(new SimulatedInstructionBlock());
+	}
+
+	@Override
+	public void saveReturnOnSubroutineStack()
+	{
+		m_nextPopMustAddLocationToSubroutineStack = true;
+	}
+
+	@Override
+	public void exitCodeBlock(int levels)
+	{
+		if(levels > 0)
+		{
+			throw new RuntimeException("Simulator has not implemented multi depth jumps");
+		}
+		getCurrentInstructionBlock().addAction(new SimulatedAction() {
+			@Override
+			public ActionResult run() throws SimulationException
+			{
+				return ActionResult.POP;
+			}
+		});
+	}
+
+	@Override
+	public void pop()
+	{
+		m_instructionBlockStack.pop();
+		if(m_nextPopMustAddLocationToSubroutineStack)
+		{
+			SimulatedAction dummyAction = new SimulatedAction() {
+				@Override
+				public ActionResult run() throws SimulationException
+				{
+					return ActionResult.CONTINUE_TO_NEXT_ACTION;
+				}
+			};
+			addAction(dummyAction);
+			m_simulation.saveLocationToSubroutineStack(m_currentNode.getName(), dummyAction.getId());
+			m_nextPopMustAddLocationToSubroutineStack = false;
+		}
+	}
+
+	@Override
+	public void visitTransitionReturnFromSubroutineStack()
+	{
+		final Simulation simulation = m_simulation;
+		
+		addAction(new SimulatedAction() {
+			@Override
+			public ActionResult run() throws SimulationException
+			{
+				simulation.returnFromSubroutine();
+				return ActionResult.RETURN_FROM_STATE_ENGINE;
+			}
+		});
+	}
+
+	@Override
+	public void endTransition(Transition transition)
+	{
+		pop();
+	}
 
 	/**
 	 * End of visiting a Node
@@ -439,17 +520,13 @@ public class SimulatorBuilder implements IModelVisitor
 	public void endNode(Node node)
 	{
 		// Encode the fallback case
-		visitTransition(null);
+//		visitTransition(null);
 		
-		final Simulation simulation = m_simulation;
-		final String stateName = m_rootNodeName;
 		addAction(new SimulatedAction() {
 			@Override
 			public ActionResult run() throws SimulationException
 			{
-				Log.fine(String.format("     Unexpected Input: Falling back to %s", stateName));
-				simulation.setCurrentState(stateName);
-				return ActionResult.RETURN_FROM_STATE_ENGINE;
+				throw new SimulationException("Node logic fell through");
 			}
 		});		
 	}
@@ -468,23 +545,6 @@ public class SimulatorBuilder implements IModelVisitor
 	 */
 	private void addAction(SimulatedAction a)
 	{
-		try
-		{
-			switch(m_nowBuilding)
-			{
-			case TRANSITION:
-				m_currentTransition.addAction(a);
-				break;
-			case NODE_SHARED_ENTRY:
-				m_currentNode.addSharedEntryCode(a);
-				break;
-			}
-		}
-		catch (SimulationException e)
-		{
-			Log.log(Level.SEVERE, "Exception building simulation: " + e.getMessage(), e);
-			// TODO: Work out exceptions in the visiting code.
-			throw new RuntimeException(e);
-		}
+		getCurrentInstructionBlock().addAction(a);
 	}
 }

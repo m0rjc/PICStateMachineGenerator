@@ -157,4 +157,13 @@ public abstract class Command
 	{
 		return false;
 	}
+
+	/**
+	 * If this command calls a node then return it here.
+	 * Otherwise return null.
+	 */
+	public String getTargetNode()
+	{
+		return null;
+	}
 }

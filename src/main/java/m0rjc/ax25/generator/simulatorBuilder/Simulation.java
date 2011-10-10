@@ -15,6 +15,7 @@ public class Simulation
 {
 	private SimulatedNode m_currentState;
 	private SimulatedVariable m_inputVariable;
+	private SubroutineReturnPointer m_subroutineReturnInfo;
 	
 	private Set<String> m_assemblerSymbols = new HashSet<String>();
 	private Map<String, SimulatedNode> m_nodes = new HashMap<String, SimulatedNode>();
@@ -84,6 +85,36 @@ public class Simulation
 		Log.fine("Simulation setting input: " + Log.formatByte(b));
 		m_inputVariable.setValue(b);
 		m_currentState.step();
+	}
+
+	/**
+	 * Save the given location to the subroutine stack
+	 */
+	public void saveLocationToSubroutineStack(String name, int id)
+	{
+		// The subroutine stack is only one deep. This just overwrites.
+		// Normally it would be an error unless processing has been abandoned in a
+		// subroutine.
+		// TODO: Have the root node clear the stack so we can detect the error.
+		m_subroutineReturnInfo = new SubroutineReturnPointer(name, id);
+	}
+
+	
+	/**
+	 * Simulate a return from a subroutine.
+	 */
+	public void returnFromSubroutine() throws SimulationException
+	{
+		if(m_subroutineReturnInfo == null)
+		{
+			throw new SimulationException("Attempted to return when not in a subroutine");
+		}
+		
+		SimulatedNode node = getNode(m_subroutineReturnInfo.getStateName());
+		int instructionId = m_subroutineReturnInfo.getInstructionId();
+		m_subroutineReturnInfo = null; // To detect multiple returns.
+		
+		node.stepFromInstructionId(instructionId);
 	}
 
 	/**
@@ -162,11 +193,17 @@ public class Simulation
 		return v;
 	}
 
+	/**
+	 * Set the current state to that given.
+	 */
 	public void setCurrentState(SimulatedNode node)
 	{
 		m_currentState = node;
 	}
 
+	/**
+	 * The amount of states generated.
+	 */
 	public int getStateCount()
 	{
 		return m_nodes.size();
@@ -244,4 +281,5 @@ public class Simulation
 	{
 		return m_nodes.get(stateName);
 	}
+
 }

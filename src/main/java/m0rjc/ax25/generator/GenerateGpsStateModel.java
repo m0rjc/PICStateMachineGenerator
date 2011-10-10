@@ -1,9 +1,5 @@
 package m0rjc.ax25.generator;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-
-import m0rjc.ax25.generator.diagramBuilder.DiagramBuilder;
 import m0rjc.ax25.generator.model.Command;
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.Precondition;
@@ -38,8 +34,6 @@ public class GenerateGpsStateModel
 	public static void main(String[] args) throws Exception
 	{
 		StateModel model = buildmodel();
-		
-		writeGraphviz(model);
 	}
 
 	public static StateModel buildmodel() throws Exception
@@ -67,19 +61,6 @@ public class GenerateGpsStateModel
 		
 		buildGpGGA(model, dollar);
 		return model;
-	}
-
-	/**
-	 * Generate the graphviz file for the model
-	 * @param model
-	 * @throws FileNotFoundException
-	 */
-	private static void writeGraphviz(StateModel model)
-		throws FileNotFoundException
-	{
-		PrintWriter writer = new PrintWriter("graph.dot");
-		model.accept(new DiagramBuilder(writer));
-		writer.close();
 	}
 
 	/**
