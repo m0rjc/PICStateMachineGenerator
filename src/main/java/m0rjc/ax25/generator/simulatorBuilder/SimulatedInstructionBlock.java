@@ -24,7 +24,7 @@ public class SimulatedInstructionBlock extends SimulatedAction
 			switch(result)
 			{
 			case POP:
-				return result;
+				return ActionResult.CONTINUE_TO_NEXT_ACTION;
 			case RETURN_FROM_STATE_ENGINE:
 				return result;
 			}

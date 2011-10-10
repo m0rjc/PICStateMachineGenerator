@@ -129,12 +129,12 @@ public class SimulatorBuilder implements IModelVisitor
 	 */
 	private SimulatedNode initialiseNode(INode node)
 	{
-		assert m_instructionBlockStack.empty() : "Previous node did not empty the instruction block stack";
 		assert !m_nextPopMustAddLocationToSubroutineStack : "Previous node jumped to a subroutine but did not save a return address";
 		
 		m_currentNode = m_simulation.getNode(node.getStateName());
 		if(m_currentNode == null)
 		{
+			assert m_instructionBlockStack.empty() : "Previous node did not empty the instruction block stack";
 			m_currentNode = new SimulatedNode(node.getStateName());
 			m_simulation.addNode(m_currentNode);
 			
@@ -144,6 +144,7 @@ public class SimulatorBuilder implements IModelVisitor
 				m_simulation.setCurrentState(m_currentNode);
 			}			
 		}
+		m_instructionBlockStack.clear();
 		return m_currentNode;
 	}
 
@@ -529,6 +530,7 @@ public class SimulatorBuilder implements IModelVisitor
 				throw new SimulationException("Node logic fell through");
 			}
 		});		
+		pop();
 	}
 
 	/**
