@@ -20,6 +20,17 @@ public abstract class SimulatedAction
 	}
 	
 	/**
+	 * For single instructions, is this the instruction's ID.
+	 * For composites, does it contain the Id?
+	 * @param instructionId
+	 * @return
+	 */
+	public boolean containsInstructionId(int instructionId)
+	{
+		return instructionId == m_id;
+	}
+	
+	/**
 	 * Run only actions from and after the given Id.
 	 * This is used when returning from subroutines to simulate a GOTO.
 	 * 

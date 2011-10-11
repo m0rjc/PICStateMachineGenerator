@@ -1,8 +1,10 @@
 package m0rjc.ax25.generator;
 
 import m0rjc.ax25.generator.model.Command;
+import m0rjc.ax25.generator.model.GosubCommand;
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.Precondition;
+import m0rjc.ax25.generator.model.ReturnFromSubroutineCommand;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
@@ -12,6 +14,9 @@ import m0rjc.ax25.generator.model.Variable;
  */
 public class GenerateGpsStateModel
 {
+	private static final String SUBROUTINE_READ_LAT_LONG = "readLatLong";
+	private static final String SUBROUTINE_READ_TIME = "readTime";
+
 	private static final int STATE_VARIABLE_PAGE = 2;
 	
 	/** This can only be read once per input character. It is a FIFO */
@@ -59,7 +64,10 @@ public class GenerateGpsStateModel
 		Node dollar = model.createNamedNode("dollar");
 		initial.addTransition(new Transition().when(Precondition.equals(input, '$')).goTo(dollar));
 		
+		buildSubroutineForLatLong(model, dollar);
+		buildSubroutineForTime(model, dollar);
 		buildGpGGA(model, dollar);
+		buildGpRMC(model, dollar);
 		return model;
 	}
 
@@ -74,17 +82,11 @@ public class GenerateGpsStateModel
 		Variable input = model.getInputVariable();
 		Variable flags = model.getVariable(VARIABLE_GPS_FLAGS);
 		
-		Node beforeLatLong = dollar
+		dollar
 			.addString("GPGGA,")
 			.addEntryCondition(Precondition.checkFlag(flags, GPS_FLAG_GPS_NEW_POSITION, false))
-			.addNumbers(6, 6, model.getVariable(VARIABLE_GPS_TIME))
-			.skipToCommaElse(new Transition().when(Precondition.equals(input, '$')).goTo(dollar));
-					
-		// Read Latitude and longitude
-		Node afterLatLong = createMachineForLatLong(model, beforeLatLong, dollar, "GpGaa");
-		
-		// Read fix quality
-		afterLatLong
+			.addEntryCommand(new GosubCommand(SUBROUTINE_READ_TIME))
+			.addEntryCommand(new GosubCommand(SUBROUTINE_READ_LAT_LONG))
 			.addString(",")
 			.addChoices(
 					new Transition()
@@ -93,25 +95,54 @@ public class GenerateGpsStateModel
 								   Command.setFlag(flags, GPS_FLAG_GPS_NEW_QUALITY, true))
 						.goTo(model.getInitialState()));
 	}
-
+	
 	/**
-	 * Create a state machine to read Lat,Long
-	 * @param model Model to build into
-	 * @param entryNode  Node to build on
-	 * @param namePrefix prefix for any names I make
-	 * @param dollar if we see a $ on the way go here.
-	 * @return the node at the end of the machine
+	 * Build just enough of GPRMC to read time and position.
+	 * @param model
+	 * @param dollar
 	 * @throws Exception
 	 */
-	private static Node createMachineForLatLong(StateModel model, Node entryNode, Node dollar, final String namePrefix)
-		throws Exception
+	private static void buildGpRMC(StateModel model, Node dollar) throws Exception
 	{
-		String stateNameReadLongitude = namePrefix + "ReadLong";
-		String stateNameComplete = namePrefix + "DoneLatLong";
-		
 		Variable input = model.getInputVariable();
 		Variable flags = model.getVariable(VARIABLE_GPS_FLAGS);
 		
+		dollar
+			.addString("GPRMC,")
+			.addEntryCondition(Precondition.checkFlag(flags, GPS_FLAG_GPS_NEW_POSITION, false))
+			.addEntryCommand(new GosubCommand(SUBROUTINE_READ_TIME))
+			.addString("A,")
+			.addEntryCommand(new GosubCommand(SUBROUTINE_READ_LAT_LONG));
+	}
+
+	/**
+	 * The read time subroutine reads 6 digits, then skips to the comma.
+	 * The subroutine ends as the comma is read.
+	 *
+	 * @param model
+	 * @param dollar
+	 */
+	private static void buildSubroutineForTime(StateModel model, Node dollar)
+	{
+		Variable input = model.getInputVariable();
+		
+		model.createNamedNode(SUBROUTINE_READ_TIME)
+			.addNumbers(6, 6, model.getVariable(VARIABLE_GPS_TIME))
+			.skipToCommaElse(new Transition().when(Precondition.equals(input, '$')).goTo(dollar))
+			.addEntryCommand(new ReturnFromSubroutineCommand());
+	}
+	
+	/**
+	 * Create a state machine to read Lat,Long
+	 */
+	private static void buildSubroutineForLatLong(StateModel model, Node dollar)
+		throws Exception
+	{
+		
+		Variable input = model.getInputVariable();
+		Variable flags = model.getVariable(VARIABLE_GPS_FLAGS);
+
+		Node entryNode = model.createNamedNode(SUBROUTINE_READ_LAT_LONG);
 		entryNode
 			.addNumbers(4,4,model.getVariable(VARIABLE_GPS_LATITUDE_DEGMIN))
 			.addString(".")
@@ -120,12 +151,12 @@ public class GenerateGpsStateModel
 			.addChoices(
 				new Transition().whenEqual(input,'S')
 						.doCommand(Command.setFlag(flags, GPS_FLAG_GPS_NORTH, false))
-						.goTo(stateNameReadLongitude),
+						.goTo("readLongitude"),
 				new Transition().whenEqual(input, 'N')
 						.doCommand(Command.setFlag(flags, GPS_FLAG_GPS_NORTH, true))
-						.goTo(stateNameReadLongitude));
+						.goTo("readLongitude"));
 		
-		model.createNamedNode(stateNameReadLongitude)
+		model.createNamedNode("readLongitude")
 			.addString(",")
 			.addNumbers(5,5,model.getVariable(VARIABLE_GPS_LONGITUDE_DEGMIN))
 			.addString(".")
@@ -134,13 +165,13 @@ public class GenerateGpsStateModel
 			.addChoices(
 					new Transition().whenEqual(input,'E')
 						.doCommand(Command.setFlag(flags, GPS_FLAG_GPS_EAST, true))
-						.goTo(stateNameComplete),
+						.goTo("latLongComplete"),
 					new Transition().whenEqual(input, 'W')
 						.doCommand(Command.setFlag(flags, GPS_FLAG_GPS_EAST, false))
-						.goTo(stateNameComplete));
+						.goTo("latLongComplete"));
 		
-		Node afterLatLong = model.createNamedNode(stateNameComplete);
+		Node afterLatLong = model.createNamedNode("latLongComplete");
 		afterLatLong.addEntryCommand(Command.setFlag(flags, GPS_FLAG_GPS_NEW_POSITION, true));
-		return afterLatLong;
+		afterLatLong.addEntryCommand(new ReturnFromSubroutineCommand());
 	}
 }

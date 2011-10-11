@@ -124,12 +124,20 @@ public class SimulatedNode
 	 */
 	public void stepFromInstructionId(int instructionId) throws SimulationException
 	{
-		Log.fine(String.format("Node %s resuming step from instruction Id %d", m_name, instructionId));
 		
 		ActionResult result;
 		try 
 		{
-			result = m_stepCode.runFromId(instructionId);
+			if(m_sharedEntryCode != null && m_sharedEntryCode.containsInstructionId(instructionId))
+			{
+				Log.fine(String.format("Node %s resuming shared entry code from instruction Id %d", m_name, instructionId));
+				result = m_sharedEntryCode.runFromId(instructionId);
+			}
+			else
+			{
+				Log.fine(String.format("Node %s resuming step from instruction Id %d", m_name, instructionId));
+				result = m_stepCode.runFromId(instructionId);
+			}
 		} 
 		catch (SimulationException e) 
 		{

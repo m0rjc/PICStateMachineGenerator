@@ -434,13 +434,10 @@ public class Node implements INode
 		visitor.endNode(this);
 		
 		// Ask target nodes to render themselves.
-		for(Transition t : m_transitions)
+		for (String targetName : getAllTargetNodeNames())
 		{
-			for (String targetName : t.getAllTargetNodeNames())
-			{
-				Node n = m_model.getNode(targetName);
-				n.accept(seenNodes, visitor);
-			}
+			Node n = m_model.getNode(targetName);
+			n.accept(seenNodes, visitor);
 		}
 	}
 
@@ -635,6 +632,37 @@ public class Node implements INode
 	 */
 	public void setSharedEntryCodeOnMultipleEntryNodes(HashSet<String> seenEntries)
 	{
+		for(String target : getAllTargetNodeNames())
+		{
+			Node targetNode = m_model.getNode(target);
+			if(targetNode != null)
+			{
+				if(!seenEntries.add(target))
+				{
+					targetNode.setUseSharedEntryCode();
+				}
+				else
+				{
+					targetNode.setSharedEntryCodeOnMultipleEntryNodes(seenEntries);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Return the names of all nodes reachable from this one.
+	 * @return
+	 */
+	private Set<String> getAllTargetNodeNames()
+	{
+		Set<String> targets = new HashSet<String>();
+		
+		for(Command c : m_entryCode)
+		{
+			String target = c.getTargetNode();
+			if(target != null) targets.add(target);
+		}
+		
 		for(Transition t : m_transitions)
 		{
 			// Don't count self transitions as they use shorter code
@@ -642,18 +670,7 @@ public class Node implements INode
 			{
 				if(targetName != getStateName())
 				{
-					Node targetNode = m_model.getNode(targetName);
-					if(targetNode != null)
-					{
-						if(!seenEntries.add(targetName))
-						{
-							targetNode.setUseSharedEntryCode();
-						}
-						else
-						{
-							targetNode.setSharedEntryCodeOnMultipleEntryNodes(seenEntries);
-						}
-					}
+					targets.add(targetName);
 				}
 			}
 		}
@@ -661,11 +678,10 @@ public class Node implements INode
 		if(isFallbackTransitionNeeded())
 		{
 			Node rootNode = m_model.getInitialState();
-			if(!seenEntries.add(rootNode.getStateName()))
-			{
-				rootNode.setUseSharedEntryCode();
-			}
+			targets.add(rootNode.getStateName());
 		}
+
+		return targets;
 	}
 
 	/**

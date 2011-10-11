@@ -20,7 +20,7 @@ public class SimulatorBuilder implements IModelVisitor
 	private SimulatedNode m_currentNode;
 	private SimulatedVariable m_currentVariable;
 	private String m_rootNodeName;
-	private boolean m_nextPopMustAddLocationToSubroutineStack;
+	private SimulatedActionSaveLocationOnSubroutineStack m_nextPopMustAddLocationToSubroutineStack;
 	
 	private Stack<SimulatedInstructionBlock> m_instructionBlockStack = new Stack<SimulatedInstructionBlock>();
 	
@@ -129,7 +129,7 @@ public class SimulatorBuilder implements IModelVisitor
 	 */
 	private SimulatedNode initialiseNode(INode node)
 	{
-		assert !m_nextPopMustAddLocationToSubroutineStack : "Previous node jumped to a subroutine but did not save a return address";
+		assert m_nextPopMustAddLocationToSubroutineStack == null : "Previous node jumped to a subroutine but did not save a return address";
 		
 		m_currentNode = m_simulation.getNode(node.getStateName());
 		if(m_currentNode == null)
@@ -449,13 +449,16 @@ public class SimulatorBuilder implements IModelVisitor
 	@Override
 	public void push()
 	{
-		m_instructionBlockStack.add(new SimulatedInstructionBlock());
+		SimulatedInstructionBlock newBlock = new SimulatedInstructionBlock();
+		addAction(newBlock);
+		m_instructionBlockStack.add(newBlock);
 	}
 
 	@Override
 	public void saveReturnOnSubroutineStack()
 	{
-		m_nextPopMustAddLocationToSubroutineStack = true;
+		m_nextPopMustAddLocationToSubroutineStack = new SimulatedActionSaveLocationOnSubroutineStack(m_simulation);
+		addAction(m_nextPopMustAddLocationToSubroutineStack);
 	}
 
 	@Override
@@ -478,7 +481,7 @@ public class SimulatorBuilder implements IModelVisitor
 	public void pop()
 	{
 		m_instructionBlockStack.pop();
-		if(m_nextPopMustAddLocationToSubroutineStack)
+		if(m_nextPopMustAddLocationToSubroutineStack != null)
 		{
 			SimulatedAction dummyAction = new SimulatedAction() {
 				@Override
@@ -488,8 +491,8 @@ public class SimulatorBuilder implements IModelVisitor
 				}
 			};
 			addAction(dummyAction);
-			m_simulation.saveLocationToSubroutineStack(m_currentNode.getName(), dummyAction.getId());
-			m_nextPopMustAddLocationToSubroutineStack = false;
+			m_nextPopMustAddLocationToSubroutineStack.setReturnPointer(new SubroutineReturnPointer(m_currentNode.getName(), dummyAction.getId()));
+			m_nextPopMustAddLocationToSubroutineStack = null;
 		}
 	}
 
@@ -502,6 +505,7 @@ public class SimulatorBuilder implements IModelVisitor
 			@Override
 			public ActionResult run() throws SimulationException
 			{
+				Log.fine(String.format("    Command: RETURN FROM SUBROUTINE."));
 				simulation.returnFromSubroutine();
 				return ActionResult.RETURN_FROM_STATE_ENGINE;
 			}

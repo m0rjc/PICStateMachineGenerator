@@ -80,6 +80,22 @@ public class TestGpsGenerateModel
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_EAST, true);
 		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NEW_POSITION, true);
 	}
+
+	@Test
+	public void testGpRMC_fix_storesFix() throws SimulationException
+	{
+		// Example taken from http://aprs.gids.nl/nmea/#rmc
+		m_simulation.acceptInput("$GPRMC,225446,A,4916.45,N,12311.12,W,000.5,054.7,191194,020.3,E*68\n\r");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_TIME, "225446");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_DEGMIN, "4916");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LATITUDE_HUNDREDTHS, "45");
+		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NORTH, true);
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_DEGMIN, "12311");
+		m_simulation.assertChars(GenerateGpsStateModel.VARIABLE_GPS_LONGITUDE_HUNDREDTHS, "12");
+		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_EAST, false);
+		m_simulation.assertFlag(GenerateGpsStateModel.VARIABLE_GPS_FLAGS, GenerateGpsStateModel.GPS_FLAG_GPS_NEW_POSITION, true);
+	}
+
 	
 	@Test
 	public void testGpGGA_fixButFixAlreadyStored_doesNotStoreFix() throws SimulationException

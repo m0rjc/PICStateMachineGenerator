@@ -38,4 +38,22 @@ public class SimulatedInstructionBlock extends SimulatedAction
 	{
 		return runFromId(-1);
 	}
+
+	/**
+	 * Does this instruction block contain the given Id?
+	 * @param instructionId
+	 * @return
+	 */
+	public boolean containsInstructionId(int instructionId)
+	{
+		if(getId() == instructionId) return true;
+		for(SimulatedAction instruction : m_actions)
+		{
+			if(instruction.containsInstructionId(instructionId))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
 }
