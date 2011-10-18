@@ -15,6 +15,8 @@ class PicAssemblyWriter extends Writer
 	private final Writer m_out;
 	private boolean m_error;
 	protected Logger m_log = Logger.getLogger(getClass().getName());
+	
+	private int m_indent;
 
 	/** Label to output on the next command */
 	private String m_currentLabel;
@@ -35,6 +37,23 @@ class PicAssemblyWriter extends Writer
 		m_out = out;
 	}
 
+	/**
+	 * Increase indent.
+	 */
+	public void indent()
+	{
+		m_indent++;
+	}
+	
+	/**
+	 * Decrease indent.
+	 */
+	public void unindent()
+	{
+		m_indent--;
+		if(m_indent < 0) m_indent = 0;
+	}
+	
 	/**
 	 * Output a big comment line of dashes
 	 */
@@ -66,7 +85,8 @@ class PicAssemblyWriter extends Writer
 	 */
 	public void writeComment(String string)
 	{
-		write("              ; ");
+		writeIndent();
+		write("; ");
 		write(string);
 		write("\n");
 	}
@@ -90,11 +110,12 @@ class PicAssemblyWriter extends Writer
 	{
 		if(m_currentLabel != null)
 		{
-			write(String.format("%-13s ", m_currentLabel + ":"));
+			String format = String.format("%%-%ds ", 13 + m_indent*2);
+			write(String.format(format, m_currentLabel + ":"));
 		}
 		else
 		{
-			write("              ");
+			writeIndent();
 		}
 		m_currentLabel = null;
 		
@@ -112,6 +133,14 @@ class PicAssemblyWriter extends Writer
 		}
 		write("\n");
 	}
+
+	private void writeIndent() 
+    {
+		for(int i = 14 + m_indent*2; i > 0; i--)
+		{
+			write(" ");
+		}
+    }
 
 	/**
 	 * Output a section marker

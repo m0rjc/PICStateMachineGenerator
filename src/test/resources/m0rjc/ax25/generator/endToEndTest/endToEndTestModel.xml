@@ -21,18 +21,24 @@
 			<Node name="root">
 				<Transition input="'$'" target="dollar" />
 			</Node>
-			<Node name="dollar">
-				<Script description="Read a GPGGA location string">
-					<Literal>GPGGA</Literal>
-					<GuardCondition>
-						<FlagCheck variable="gpsFlags" flag="FLAG_GPS_NEW_POSITION"	value="false" />
-					</GuardCondition>
-					<Literal>,</Literal>
+			
+			<!-- Subroutine to read a GPS 6 digit time.
+			     Starts with the comma just read. Ends reading the last comma. -->
+			<Node name="readGpsTime">
+				<Script>
 					<Numbers min="6" max="6" store="gpsTime" />
 					<SkipTo>
 						<Choice input="'$'" target="dollar" />
 						<Choice input="','" />
 					</SkipTo>
+					<Return/>
+				</Script>
+			</Node>
+			
+			<!-- Subroutine to read lat long.
+			     Starts with the comma just read. Ends reading the last comma. -->
+			<Node name="readLatLong">
+				<Script>
 					<Numbers min="4" max="4" store="gpsLatitudeDegMin" />
 					<Literal>.</Literal>
 					<Numbers max="2" min="2" store="gpsLatitudeHundredths" />
@@ -75,6 +81,18 @@
 						</Choice>
 					</Choices>
 					<Literal>,</Literal>
+					<Return/>
+				</Script>			
+			</Node>
+			<Node name="dollar">
+				<Script description="Read a GPGGA location string">
+					<Literal>GPGGA</Literal>
+					<GuardCondition>
+						<FlagCheck variable="gpsFlags" flag="FLAG_GPS_NEW_POSITION"	value="false" />
+					</GuardCondition>
+					<Literal>,</Literal>
+					<GoSub>readGpsTime</GoSub>
+					<GoSub>readLatLong</GoSub>
 					<Choices>
 						<Choice input="*">
 							<Commands>

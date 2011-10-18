@@ -5,6 +5,8 @@ import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
 
 import m0rjc.ax25.generator.model.Command;
+import m0rjc.ax25.generator.model.GosubCommand;
+import m0rjc.ax25.generator.model.ReturnFromSubroutineCommand;
 import m0rjc.ax25.generator.model.RomLocation;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Variable;
@@ -16,6 +18,14 @@ import m0rjc.ax25.generator.model.Variable;
  */
 class CommandListSaxHandler extends ChainedSaxHandler
 {
+	private static final String COMMAND_CLEAR_INDEXED_VALUE = "ClearIndexedValue";
+	private static final String COMMAND_STORE_VALUE = "StoreValue";
+	private static final String COMMAND_SET_FLAG = "SetFlag";
+	private static final String COMMAND_RETURN = "Return";
+	private static final String COMMAND_GO_SUB = "GoSub";
+	private static final String COMMAND_CALL = "Call";
+	private static final String COMMAND_CLEAR_VALUE = "ClearValue";
+
 	/**
 	 * Callback interface for command creation
 	 * @author Richard Corfield <m0rjc@raynet-uk.net>
@@ -42,17 +52,17 @@ class CommandListSaxHandler extends ChainedSaxHandler
 		{
 			// Nothing
 		}
-		else if("ClearValue".equals(localName))
+		else if(COMMAND_CLEAR_VALUE.equals(localName))
 		{
 			startReadingText();
 		}
-		else if("ClearIndexedValue".equals(localName))
+		else if(COMMAND_CLEAR_INDEXED_VALUE.equals(localName))
 		{
 			String variable = getString(attributes, "variable");
 			String indexer = getString(attributes, "indexer");
 			newCommand(Command.clearIndexedValue(getVariable(variable), getVariable(indexer)));
 		}
-		else if("StoreValue".equals(localName))
+		else if(COMMAND_STORE_VALUE.equals(localName))
 		{
 			String sourceName = attributes.getValue("source");
 			Variable source = (sourceName != null ? getVariable(sourceName) : m_model.getInputVariable());
@@ -67,16 +77,24 @@ class CommandListSaxHandler extends ChainedSaxHandler
 				newCommand(Command.storeValue(source, destination));
 			}
 		}
-		else if("SetFlag".equals(localName))
+		else if(COMMAND_SET_FLAG.equals(localName))
 		{
 			Variable v = getVariable(getString(attributes, "variable"));
 			String flag = getString(attributes,"flag");
 			boolean value = getBoolean(attributes,"value");
 			newCommand(Command.setFlag(v, flag, value));
 		}
-		else if("Call".equals(localName))
+		else if(COMMAND_CALL.equals(localName))
 		{
 			startReadingText();
+		}
+		else if(COMMAND_GO_SUB.equals(localName))
+		{
+			startReadingText();
+		}
+		else if(COMMAND_RETURN.equals(localName))
+		{
+			// Handle on end of node.
 		}
 		else
 		{
@@ -88,15 +106,24 @@ class CommandListSaxHandler extends ChainedSaxHandler
 	protected void onEndElement(String uri, String localName, String qName)
 			throws SAXException
 	{
-		if("ClearValue".equals(localName))
+		if(COMMAND_CLEAR_VALUE.equals(localName))
 		{
 			Variable v = getVariable(finishReadingText());
 			newCommand(Command.clearValue(v));
 		}
-		else if("Call".equals(localName))
+		else if(COMMAND_CALL.equals(localName))
 		{
 			RomLocation method = getRomLocation(finishReadingText());
 			newCommand(Command.call(method));
+		}
+		else if(COMMAND_GO_SUB.equals(localName))
+		{
+			String state = finishReadingText();
+			newCommand(new GosubCommand(state));
+		}
+		else if(COMMAND_RETURN.equals(localName))
+		{
+			newCommand(new ReturnFromSubroutineCommand());
 		}
 	}
 	

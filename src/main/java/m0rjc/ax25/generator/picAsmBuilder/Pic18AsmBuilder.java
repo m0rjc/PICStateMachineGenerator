@@ -612,6 +612,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	@Override
 	public void visitTransitionReturnFromSubroutineStack()
 	{
+		m_assembler.writeComment(" Return from subroutine");
 		gotoPointer(m_subroutineStack);
 	}
 	
@@ -625,6 +626,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	public void push()
 	{
 		m_codeBlockStack.push(getNextInternalLabel());
+		m_assembler.indent();
 	}
 	
 	/** 
@@ -644,6 +646,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	public void saveReturnOnSubroutineStack()
 	{
 		String label = m_codeBlockStack.peek();
+		m_assembler.writeComment(" Prepare for Gosub. Subroutine will return to " + label);
 		setPointer(m_subroutineStack, label);
 		m_nodeHasSubroutineCalls = true;
 	}
@@ -656,6 +659,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	public void exitCodeBlock(int levels)
 	{
 		String name = m_codeBlockStack.elementAt(m_codeBlockStack.size() - 1 - levels);
+//		m_assembler.writeComment(String.format(" Break from code block (%d levels)", levels));
 		m_assembler.opCode("GOTO", name);
 	}
 
@@ -666,6 +670,7 @@ public class Pic18AsmBuilder implements IModelVisitor
 	public void pop()
 	{
 		String label = m_codeBlockStack.pop();
+		m_assembler.unindent();
 		m_assembler.writeLabel(label);
 	}
 

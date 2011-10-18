@@ -4,8 +4,10 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
 import m0rjc.ax25.generator.model.Command;
+import m0rjc.ax25.generator.model.GosubCommand;
 import m0rjc.ax25.generator.model.Node;
 import m0rjc.ax25.generator.model.Precondition;
+import m0rjc.ax25.generator.model.ReturnFromSubroutineCommand;
 import m0rjc.ax25.generator.model.StateModel;
 import m0rjc.ax25.generator.model.Transition;
 import m0rjc.ax25.generator.model.Variable;
@@ -18,6 +20,14 @@ import m0rjc.ax25.generator.model.Variable;
 class ScriptSaxHandler extends ChainedSaxHandler
 	implements TransitionSaxHandler.Callback, CommandListSaxHandler.Callback, ConditionListSaxHandler.Callback
 {
+	private static final String STEP_RETURN = "Return";
+	private static final String STEP_GO_SUB = "GoSub";
+	private static final String STEP_SKIP_TO = "SkipTo";
+	private static final String STEP_NUMBERS = "Numbers";
+	private static final String STEP_CHOICES = "Choices";
+	private static final String STEP_LITERAL = "Literal";
+	private static final String STEP_COMMANDS = "Commands";
+	private static final String STEP_GUARD_CONDITION = "GuardCondition";
 	private final StateModel m_model;
 	private final CommandListSaxHandler m_commandHandler;
 	private final ConditionListSaxHandler m_conditionHandler;
@@ -39,7 +49,7 @@ class ScriptSaxHandler extends ChainedSaxHandler
 	protected void onStartElement(String uri, String localName, String qName,
 			Attributes attributes) throws SAXException
 	{
-		if("GuardCondition".equals(localName))
+		if(STEP_GUARD_CONDITION.equals(localName))
 		{
 			// The guard condition applies to the "current node". This is the node that is entered
 			// as a result of whatever transition we've just scripted, and the node that whatever
@@ -47,22 +57,26 @@ class ScriptSaxHandler extends ChainedSaxHandler
 			setChild(m_conditionHandler);
 			m_conditionHandler.startElement(uri, localName, qName, attributes);
 		}
-		else if("Commands".equals(localName))
+		else if(STEP_COMMANDS.equals(localName))
 		{
 			setChild(m_commandHandler);
 			m_commandHandler.startElement(uri, localName, qName, attributes);
 		}
-		else if("Literal".equals(localName))
+		else if(STEP_LITERAL.equals(localName))
 		{
 			startReadingText();
 		}
-		else if("Choices".equals(localName) || "SkipTo".equals(localName))
+		else if(STEP_CHOICES.equals(localName) || STEP_SKIP_TO.equals(localName))
 		{
 			onStartChoices(uri, localName, qName, attributes);
 		}
-		else if("Numbers".equals(localName))
+		else if(STEP_NUMBERS.equals(localName))
 		{
 			onNumbers(attributes);
+		}
+		else if(STEP_GO_SUB.equals(localName))
+		{
+			startReadingText();
 		}
 	}
 
@@ -94,22 +108,34 @@ class ScriptSaxHandler extends ChainedSaxHandler
 	protected void onEndElement(String uri, String localName, String qName)
 			throws SAXException
 	{
-		if("Choices".equals(localName))
+		if(STEP_CHOICES.equals(localName))
 		{
 			m_currentNode = m_nextNode;
 		}
-		else if("SkipTo".equals(localName))
+		else if(STEP_SKIP_TO.equals(localName))
 		{
 			m_currentNode.createSelfTransition();
 			m_currentNode = m_nextNode;
 		}
-		else if("Literal".equals(localName))
+		else if(STEP_LITERAL.equals(localName))
 		{
 			String literal = finishReadingText();
 			if(literal != null && literal.length() > 0)
 			{
 				m_currentNode = m_currentNode.addString(literal);
 			}
+		}
+		else if(STEP_GO_SUB.equals(localName))
+		{
+			// The gosub is applied to the "current node". This is the node that is entered
+			// as a result of whatever transition we've just scripted, and the node that whatever
+			// we script next will come out of.
+			String target = finishReadingText();
+			m_currentNode.addEntryCommand(new GosubCommand(target));
+		}
+		else if(STEP_RETURN.equals(localName))
+		{
+			m_currentNode.addEntryCommand(new ReturnFromSubroutineCommand());
 		}
 	}
 

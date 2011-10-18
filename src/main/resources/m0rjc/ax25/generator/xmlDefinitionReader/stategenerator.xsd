@@ -12,6 +12,11 @@
 		</annotation>
 	</element>
 
+	<simpleType name="emptyType">
+		<annotation><documentation>A type the content of which is ignored. An empty/marker type.</documentation></annotation>
+		<restriction base="string"></restriction>
+	</simpleType>
+
 	<simpleType name="assemblerSymbol">
         <annotation>
         	<documentation>A valid symbol name in MPASM assembler</documentation>
@@ -308,6 +313,16 @@
 						of type ROM.</documentation>
 				</annotation>
 			</element>
+			<element name="GoSub" type="state:assemblerSymbol">
+				<annotation>
+					<documentation>Call the given Node as a subroutine</documentation>
+				</annotation>
+			</element>
+			<element name="Return" type="state:emptyType">
+				<annotation>
+					<documentation>Return from a subroutine. Execution of this node/transition stops.</documentation>
+				</annotation>
+			</element>
 		</choice>
 	</complexType>
 
@@ -410,6 +425,17 @@
 						<documentation>Insert the nodes required to skip until and of the
 							given conditions are met</documentation>
 					</annotation>
+				</element>
+				<element name="GoSub" type="state:assemblerSymbol">
+					<annotation>
+						<documentation>Insert a command to call a subroutine starting at
+						the given State name. The command is inserted as an entry command
+						to the current node.</documentation>
+					</annotation>
+				</element>
+				<element name="Return" type="state:emptyType">
+					<annotation><documentation>Insert a command to return from a subroutine.
+					Processing of the script stops at this point.</documentation></annotation>
 				</element>
 			</choice>
 		</sequence>
