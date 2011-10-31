@@ -331,7 +331,7 @@ public class Pic18AsmBuilder implements IModelVisitor
         {
             int bitInByte = bit % 8;
             m_asmHeader.writePreprocessor("#define " + flag + " (" + bitInByte + ")");
-            bitInByte++;
+            bit++;
         }
         
         // C
@@ -359,13 +359,12 @@ public class Pic18AsmBuilder implements IModelVisitor
         // C
         writePragmaVarLocate(v);
         StringBuilder sb = new StringBuilder();
-        sb.append("extern char");
+        sb.append("extern char ");
+        sb.append(v.getName());
         if(v.getSize() > 1)
         {
             sb.append("[]");
         }
-        sb.append(' ');
-        sb.append(v.getName());
         sb.append(';');
         m_cHeader.writeln(sb.toString());
     }
