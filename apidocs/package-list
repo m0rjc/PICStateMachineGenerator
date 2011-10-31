@@ -1,7 +1,7 @@
-m0rjc.ax25.generator
-m0rjc.ax25.generator.model
-m0rjc.ax25.generator.picAsmBuilder
-m0rjc.ax25.generator.simulatorBuilder
-m0rjc.ax25.generator.swingui
-m0rjc.ax25.generator.visitor
-m0rjc.ax25.generator.xmlDefinitionReader
+uk.me.m0rjc.picstategenerator
+uk.me.m0rjc.picstategenerator.model
+uk.me.m0rjc.picstategenerator.picAsmBuilder
+uk.me.m0rjc.picstategenerator.simulatorBuilder
+uk.me.m0rjc.picstategenerator.swingui
+uk.me.m0rjc.picstategenerator.visitor
+uk.me.m0rjc.picstategenerator.xmlDefinitionReader
