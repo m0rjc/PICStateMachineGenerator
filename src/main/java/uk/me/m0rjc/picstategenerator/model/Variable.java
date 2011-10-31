@@ -7,14 +7,21 @@ import uk.me.m0rjc.picstategenerator.visitor.IModelVisitor;
 
 
 /**
- * A variable used or accessed by the state machine
+ * A variable used or accessed by the state machine.
  */
 public class Variable
 {
-	/** Special value for access bank on PIC18 */
+	/** Special value for access bank on PIC18. */
 	public static final int ACCESS_BANK = -1;
 	
-	public Variable(String name, Ownership ownership, int bank, int size)
+	/**
+	 * Construct.
+	 * @param name name for the variable.
+	 * @param ownership policy for creating the variable.
+	 * @param bank RAM bank it lives in, or {@value #ACCESS_BANK}
+	 * @param size bytes to allocate.
+	 */
+	public Variable(final String name, final Ownership ownership, final int bank, final int size)
 	{
 		m_name = name;
 		m_bank = bank;
@@ -22,13 +29,18 @@ public class Variable
 		m_ownership = ownership;
 	}
 		
+	/**
+	 * Information about which code owns a variable, therefore how it must be declared in code.
+	 * @author "Richard Corfield &lt;m0rjc@m0rjc.me.uk&gt;"
+	 *
+	 */
 	public enum Ownership
 	{
 		/** A variable that exists only within the generated module. */
 		INTERNAL(true, false, false),
-		/** A variable that we import using an EXTERN keyword */
+		/** A variable that we import using an EXTERN keyword. */
 		EXTERN(false, false, true),
-		/** A variable that we declare, and export using a GLOBAL keyword */
+		/** A variable that we declare, and export using a GLOBAL keyword. */
 		GLOBAL(true, true, false),
 		/** 
 		 * A variable that is known, but who's declaration and import is handled by literal code blocks.
@@ -37,7 +49,12 @@ public class Variable
 		 */
 		NONE(false, false, false);
 		
-		private Ownership(boolean mustDeclare, boolean mustExport, boolean mustImport)
+		/**
+		 * @param mustDeclare true if the variable must be declared in the ASM module.
+		 * @param mustExport true if the variable is public, so must be exported by the module.
+		 * @param mustImport true if the variable is declared outside the module, so must be imported.
+		 */
+		private Ownership(final boolean mustDeclare, final boolean mustExport, final boolean mustImport)
 		{
 			m_mustDeclare = mustDeclare;
 			m_mustExport = mustExport;
@@ -45,8 +62,7 @@ public class Variable
 		}
 
 		/**
-		 * Must the generated code declare storate for this variable?
-		 * @return
+		 * @return the generated code must declare storage for this variable.
 		 */
 		public boolean isMustDeclareStorage()
 		{
@@ -56,6 +72,7 @@ public class Variable
 		/**
 		 * Must the generated code export this variable as GLOBAL.
 		 * Must it be included in any generated .inc or .h files?
+		 * @return true if the variable is public, so must be exported.
 		 */
 		public boolean isMustExport()
 		{
@@ -65,6 +82,7 @@ public class Variable
 		/**
 		 * Must the generated code declare this variable as EXTERN,
 		 * so importing it.
+		 * @return true if the variable is defined outside the generated module so must be imported.
 		 */
 		public boolean isMustImport()
 		{
@@ -126,7 +144,7 @@ public class Variable
 	}
 
 	/**
-	 * The variable name
+	 * @return the variable name.
 	 */
 	public String getName()
 	{
@@ -134,7 +152,7 @@ public class Variable
 	}
 
 	/**
-	 * Bytes to allocate for this variable
+	 * @return number of bytes to allocate for this variable.
 	 */
 	public int getSize()
 	{
@@ -144,13 +162,16 @@ public class Variable
 	/**
 	 * Declare a flag.
 	 * The variable will grow in size for every 8 flags added.
-	 * @param name
-	 * @return
+	 * @param name the name of the flag to add.
+	 * @return this variable for fluent coding style.
 	 */
-	public Variable addFlag(String name)
+	public Variable addFlag(final String name)
 	{
 		m_flags.add(name);
-		while(m_flags.size() /8 >= m_size) m_size++;
+		while( (m_flags.size() /8) >= m_size)
+		{
+		    m_size++;
+		}
 		return this;
 	}
 
@@ -158,22 +179,26 @@ public class Variable
 	 * Return the bit for the given flag.
 	 * First byte has bits 0 to 7.
 	 * Second byte has bits 8 to 15.
-	 * @param gpsFlagGpsNewTime
-	 * @return
+	 * @param name the name to look up.
+	 * @return the bit index for the name.
+	 * @throws IllegalArgumentException if the name is not known.
 	 */
-	public int getBit(String name)
+	public int getBit(final String name)
 	{
 		int result = m_flags.indexOf(name);
-		if(result < 0) throw new IllegalArgumentException("Flag " + name + " not defined for " + m_name);
+		if(result < 0) 
+		{
+		    throw new IllegalArgumentException("Flag " + name + " not defined for " + m_name);
+		}
 		return result;
 	}
 
 	/**
 	 * If this variable is marked EXTERN then tell the visitor.
 	 * Called as part of creating the ASM, the INC and H
-	 * @param visitor
+     * @param visitor visitor to call.
 	 */
-	void acceptForExtern(IModelVisitor visitor)
+	void acceptForExtern(final IModelVisitor visitor)
 	{
 		if(m_ownership.isMustImport())
 		{
@@ -184,8 +209,10 @@ public class Variable
 	/**
 	 * If this variable is marked EXTERN then tell the visitor.
 	 * Called as part of generating the ASM definition.
+	 * 
+	 * @param visitor visitor to call.
 	 */
-	void acceptForGlobal(IModelVisitor visitor)
+	void acceptForGlobal(final IModelVisitor visitor)
 	{
 		if(m_ownership.isMustExport())
 		{
@@ -196,26 +223,19 @@ public class Variable
 	
 	/**
 	 * Define myself to the visitor.
-	 * @param visitor
+	 * @param visitor the visitor.
 	 * @param currentRamPage page currently being defined, or -1 for ACCESS
 	 */
-	void acceptForDeclaration(IModelVisitor visitor, int currentRamPage)
+	void acceptForDeclaration(final IModelVisitor visitor, final int currentRamPage)
 	{
 		if(m_ownership.isMustDeclareStorage() && isInRamPage(currentRamPage))
 		{
-			visitor.visitCreateVariableDefinition(getName(), getSize());
-			int i = 0;
-			for(String flag : m_flags)
-			{
-				visitor.visitCreateFlagDefinition(flag, i);
-				i++;
-			}
+			visitor.visitCreateVariableDefinition(this);
 		}
 	}
 
 	/**
-	 * Must this variable's storage be declared in the generated code?
-	 * @return
+	 * @return Must this variable's storage be declared in the generated code?
 	 */
 	public boolean isMustDeclareStorage()
 	{
@@ -223,18 +243,17 @@ public class Variable
 	}
 	
 	/**
-	 * True if the variable is in the given RAM page
+	 * True if the variable is in the given RAM page.
 	 * @param page -1 for ACCESS, 0 to 15 for RAM pages
-	 * @return
+	 * @return true if in the given page.
 	 */
-	public boolean isInRamPage(int page)
+	public boolean isInRamPage(final int page)
 	{
 		return page == m_bank;
 	}
 
 	/**
-	 * True if the variable is defined in access bank
-	 * @return
+	 * @return True if the variable is defined in access bank
 	 */
 	public boolean isAccess()
 	{
@@ -242,12 +261,35 @@ public class Variable
 	}
 
 	/**
-	 * Bank for this variable or -1 for ACCESS BANK.
-	 * @return
+	 * @return Bank for this variable or -1 for ACCESS BANK.
 	 */
 	public int getBank()
 	{
 		return m_bank;
 	}
-	
+
+	/**
+	 * Has the variable flags?
+	 * @return true if there are flags.
+	 */
+    public boolean hasFlags()
+    {
+        return !m_flags.isEmpty();
+    }
+
+    /**
+     * @return the names of the flags in ascending bit order.
+     */
+    public String[] getFlagNames()
+    {
+        return m_flags.toArray(new String[m_flags.size()]);
+    }
+
+    /**
+     * @return true if the variable is public and must be exported.
+     */
+    public boolean isMustExport()
+    {
+        return m_ownership.isMustExport();
+    }
 }

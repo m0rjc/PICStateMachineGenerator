@@ -212,6 +212,7 @@ public class Pic18AsmBuilder implements IModelVisitor
             outputEntryPointGlobals();
         }
         m_assembler.opCode("GLOBAL", name);
+        m_asmHeader.opCode("EXTERN", name);
     }
 
     /** Output globals for the module entry points. */
@@ -248,6 +249,13 @@ public class Pic18AsmBuilder implements IModelVisitor
         {
             m_assembler.blankLine();
             m_assembler.writeSection(m_modelName + "Acs", "UDATA_ACS");
+            
+            m_asmHeader.blankLine();
+            m_asmHeader.blockComment("Access Variables");
+            
+            m_cHeader.blankLine();
+            m_cHeader.blockComment("Access Variables");
+            
             buildInternalPointers(Variable.ACCESS_BANK);
         }
     }
@@ -292,23 +300,86 @@ public class Pic18AsmBuilder implements IModelVisitor
     }
 
     @Override
-    public void visitCreateVariableDefinition(final String name, final int size)
+    public void visitCreateVariableDefinition(final Variable v)
     {
-        m_assembler.ramResourceAllocation(name, size);
+        m_assembler.ramResourceAllocation(v.getName(), v.getSize());
+        if(v.isMustExport())
+        {
+            if(v.hasFlags())
+            {
+                createHeadersForFlagVariable(v);
+            }
+            else
+            {
+                createHeadersForPlainVariable(v);
+            }
+        }
     }
 
     /**
-     * Create a #define for a flag bit in the INC and H files.
-     * 
-     * @param name the name of the flag
-     * @param bit the number of the bit.
+     * Output header lines for a flag variable.
+     * @param v variable to output header lines for.
      */
-    @Override
-    public void visitCreateFlagDefinition(final String name, final int bit)
+    private void createHeadersForFlagVariable(final Variable v)
     {
-        String define = String.format("#define %s (%d)", name, bit % 8);
-        m_asmHeader.writePreprocessor(define);
-        m_cHeader.writePreprocessor(define);
+        String[] flagNames = v.getFlagNames();
+
+        // ASM
+        m_asmHeader.opCode("EXTERN", v.getName());
+        int bit = 0;
+        for(String flag : flagNames)
+        {
+            int bitInByte = bit % 8;
+            m_asmHeader.writePreprocessor("#define " + flag + " (" + bitInByte + ")");
+            bitInByte++;
+        }
+        
+        // C
+        writePragmaVarLocate(v);
+        m_cHeader.writeln("extern struct");
+        m_cHeader.writeln("{");
+        m_cHeader.indent();
+        for(String flag : flagNames)
+        {
+            m_cHeader.writeln("unsigned " + flag + " :1;");
+        }
+        m_cHeader.unindent();
+        m_cHeader.writeln("} " + v.getName() + ";");
+    }
+
+    /**
+     * Output header lines for a plain variable.
+     * @param v the variable to output.
+     */
+    private void createHeadersForPlainVariable(final Variable v)
+    {
+        // ASM
+        m_asmHeader.opCode("EXTERN", v.getName());
+        
+        // C
+        writePragmaVarLocate(v);
+        StringBuilder sb = new StringBuilder();
+        sb.append("extern char");
+        if(v.getSize() > 1)
+        {
+            sb.append("[]");
+        }
+        sb.append(' ');
+        sb.append(v.getName());
+        sb.append(';');
+        m_cHeader.writeln(sb.toString());
+    }
+
+    /** Output the #pragma varlocate line for the given variable in the C header file.
+     * No line will be written if the variable is in the access bank.
+     * @param v variable to write the line for.
+     */
+    private void writePragmaVarLocate(final Variable v)
+    {
+        if(!v.isAccess())
+        {
+            m_cHeader.writePreprocessor("#pragma varlocate \"" + getRamSectionName(v.getBank()) + "\" " + v.getName());
+        }
     }
 
     @Override
@@ -318,9 +389,19 @@ public class Pic18AsmBuilder implements IModelVisitor
         if (modelDefinesVariablesInThisBank)
         {
             m_numberOfBanksUsed++;
+            String ramSectionName = getRamSectionName(bankNumber);
+
             m_assembler.blankLine();
             m_assembler.writeComment("Please set up the linker to locate this block as required.");
-            m_assembler.writeSection(m_modelName + "Bank" + bankNumber, "UDATA");
+            m_assembler.writeSection(ramSectionName, "UDATA");
+            
+            m_asmHeader.blankLine();
+            m_asmHeader.blockComment("Variables for bank " + ramSectionName);
+            
+            m_cHeader.blankLine();
+            m_cHeader.blockComment("Variables for bank " + ramSectionName);
+
+            
             buildInternalPointers(bankNumber);
 
             if (!m_hasBankedVariables)
@@ -330,6 +411,15 @@ public class Pic18AsmBuilder implements IModelVisitor
                 m_hasBankedVariables = true;
             }
         }
+    }
+
+    /**
+     * @param bankNumber the bank to produce a section name for.
+     * @return the section name for the linker script.
+     */
+    private String getRamSectionName(final int bankNumber)
+    {
+        return m_modelName + "Bank" + bankNumber;
     }
 
     /**
@@ -345,15 +435,13 @@ public class Pic18AsmBuilder implements IModelVisitor
         {
             m_statePointer = new Variable("_statePtr", Ownership.INTERNAL,
                     bankNumber, m_largeRomModel ? 3 : 2);
-            visitCreateVariableDefinition(m_statePointer.getName(),
-                    m_statePointer.getSize());
+            visitCreateVariableDefinition(m_statePointer);
         }
         if (m_subroutineStack == null && m_requiresSubroutineStack)
         {
             m_subroutineStack = new Variable("_subReturn", Ownership.INTERNAL,
                     bankNumber, m_largeRomModel ? 3 : 2);
-            visitCreateVariableDefinition(m_subroutineStack.getName(),
-                    m_subroutineStack.getSize());
+            visitCreateVariableDefinition(m_subroutineStack);
         }
     }
 

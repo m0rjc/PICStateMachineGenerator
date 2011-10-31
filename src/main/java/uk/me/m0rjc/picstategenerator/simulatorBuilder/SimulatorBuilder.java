@@ -75,25 +75,16 @@ public class SimulatorBuilder implements IModelVisitor
 		// Nothing to do
 	}
 	
-	/**
-	 * Create a variable definition
-	 * @param name
-	 * @param size
-	 */
-	public void visitCreateVariableDefinition(String name, int size)
+	@Override
+	public void visitCreateVariableDefinition(final Variable v)
 	{
-		m_currentVariable = new SimulatedVariable(name, size);
+		m_currentVariable = new SimulatedVariable(v.getName(), v.getSize());
 		m_simulation.addVariable(m_currentVariable);
-	}
-
-	/**
-	 * Create a #define for a flag bit
-	 * @param name
-	 * @param bit
-	 */
-	public void visitCreateFlagDefinition(String name, int bit)
-	{
-		m_currentVariable.registerBit(name, bit);
+		String[] flags = v.getFlagNames();
+		for(int i = 0; i < flags.length; i++)
+		{
+		    m_currentVariable.registerBit(flags[i], i);
+		}
 	}
 
 	

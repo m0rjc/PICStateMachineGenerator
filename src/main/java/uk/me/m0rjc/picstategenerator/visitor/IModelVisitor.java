@@ -39,18 +39,10 @@ public interface IModelVisitor
 	void visitStartAccessVariables(boolean modelDefinesAccessVariables);
 	
 	/**
-	 * Create a variable definition
-	 * @param name
-	 * @param size
+	 * Create a variable definition. Include any flags.
+	 * @param v Variable to define.
 	 */
-	void visitCreateVariableDefinition(String name, int size);
-
-	/**
-	 * Create a #define for a flag bit
-	 * @param name
-	 * @param bit
-	 */
-	void visitCreateFlagDefinition(String name, int bit);
+	void visitCreateVariableDefinition(Variable v);
 	
 	/**
 	 * Declare the start of banked variable definition

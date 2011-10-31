@@ -15,7 +15,7 @@ import uk.me.m0rjc.picstategenerator.xmlDefinitionReader.XmlDefinitionLoader;
  * Test model loading.
  * This class is initially to give me something to debug with so I can watch behaviour.
  * 
- * @author Richard Corfield <m0rjc@raynet-uk.net>
+ * @author "Richard Corfield &lt;m0rjc@m0rjc.me.uk&gt;"
  */
 @RunWith(JUnit4.class)
 public class TestLoadModel
