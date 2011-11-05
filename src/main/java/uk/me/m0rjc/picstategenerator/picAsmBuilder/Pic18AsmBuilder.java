@@ -8,9 +8,9 @@ import java.util.logging.Logger;
 
 import uk.me.m0rjc.picstategenerator.model.Node;
 import uk.me.m0rjc.picstategenerator.model.RomLocation;
+import uk.me.m0rjc.picstategenerator.model.SymbolOwnership;
 import uk.me.m0rjc.picstategenerator.model.Transition;
 import uk.me.m0rjc.picstategenerator.model.Variable;
-import uk.me.m0rjc.picstategenerator.model.Variable.Ownership;
 import uk.me.m0rjc.picstategenerator.visitor.IModel;
 import uk.me.m0rjc.picstategenerator.visitor.IModelVisitor;
 import uk.me.m0rjc.picstategenerator.visitor.INode;
@@ -433,13 +433,13 @@ public class Pic18AsmBuilder implements IModelVisitor
     {
         if (m_statePointer == null)
         {
-            m_statePointer = new Variable("_statePtr", Ownership.INTERNAL,
+            m_statePointer = new Variable("_statePtr", SymbolOwnership.INTERNAL,
                     bankNumber, m_largeRomModel ? 3 : 2);
             visitCreateVariableDefinition(m_statePointer);
         }
         if (m_subroutineStack == null && m_requiresSubroutineStack)
         {
-            m_subroutineStack = new Variable("_subReturn", Ownership.INTERNAL,
+            m_subroutineStack = new Variable("_subReturn", SymbolOwnership.INTERNAL,
                     bankNumber, m_largeRomModel ? 3 : 2);
             visitCreateVariableDefinition(m_subroutineStack);
         }

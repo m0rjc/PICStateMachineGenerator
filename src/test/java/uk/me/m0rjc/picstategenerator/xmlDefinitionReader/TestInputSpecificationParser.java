@@ -11,9 +11,9 @@ import org.xml.sax.SAXException;
 
 import uk.me.m0rjc.picstategenerator.model.CompositePrecondition;
 import uk.me.m0rjc.picstategenerator.model.Precondition;
+import uk.me.m0rjc.picstategenerator.model.SymbolOwnership;
 import uk.me.m0rjc.picstategenerator.model.Variable;
 import uk.me.m0rjc.picstategenerator.model.VariableValuePrecondition;
-import uk.me.m0rjc.picstategenerator.model.Variable.Ownership;
 import uk.me.m0rjc.picstategenerator.xmlDefinitionReader.InputSpecificationParser;
 
 @RunWith(JUnit4.class)
@@ -57,7 +57,7 @@ public class TestInputSpecificationParser
 	public void testParseSpec_SingleNumber() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", SymbolOwnership.GLOBAL, -1, 1);
 		VariableValuePrecondition expected = VariableValuePrecondition.createEQ(v, 123);
 		Assert.assertEquals(expected, (VariableValuePrecondition)parseSpec(parser, v, "123"));		
 	}
@@ -66,7 +66,7 @@ public class TestInputSpecificationParser
 	public void testParseSpec_SingleCharacter() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", SymbolOwnership.GLOBAL, -1, 1);
 		VariableValuePrecondition expected = VariableValuePrecondition.createEQ(v, '$');
 		Assert.assertEquals(expected, (VariableValuePrecondition)parseSpec(parser, v, "'$'"));		
 	}
@@ -75,7 +75,7 @@ public class TestInputSpecificationParser
 	public void testParseSpec_Wildcard() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", SymbolOwnership.GLOBAL, -1, 1);
 		Assert.assertNull(parseSpec(parser, v, "*"));		
 	}
 
@@ -83,7 +83,7 @@ public class TestInputSpecificationParser
 	public void testParseSpec_CharacterRange() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", SymbolOwnership.GLOBAL, -1, 1);
 		CompositePrecondition expected = (CompositePrecondition) Precondition.range(v, '0', '9');
 		Assert.assertEquals(expected, (CompositePrecondition)parseSpec(parser, v, "'0'-'9'"));		
 	}
@@ -92,7 +92,7 @@ public class TestInputSpecificationParser
 	public void testParseSpec_NumberRange() throws SAXException
 	{
 		InputSpecificationParser parser = new InputSpecificationParser();
-		Variable v = new Variable("test", Ownership.GLOBAL, -1, 1);
+		Variable v = new Variable("test", SymbolOwnership.GLOBAL, -1, 1);
 		CompositePrecondition expected = (CompositePrecondition) Precondition.range(v, 0, 9);
 		Assert.assertEquals(expected, (CompositePrecondition)parseSpec(parser, v, "0-9"));		
 	}

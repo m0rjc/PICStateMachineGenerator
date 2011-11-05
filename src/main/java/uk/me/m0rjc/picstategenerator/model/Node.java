@@ -175,14 +175,17 @@ public class Node implements INode
 	}
 	
 	/**
-	 * Create node or nodes to capture numbers.
+	 * Create node or nodes to capture numbers as a character array.
 	 * 
 	 * If max > min then the result will be a null terminated string. Allow space for the null.
 	 * If max == min then the result will not be null terminated.
 	 * 
+	 * @param min the minimum amount of characters to read.
+	 * @param max the maximum amount of characters to read.
+	 * @param storage character array to store the result.
 	 * @return the node that is entered on reading the last number
 	 */
-	public Node addNumbers(int min, int max, Variable storage) 
+	public Node addNumbers(final int min, final int max, final Variable storage) 
 	{
 		Variable input = m_model.getInputVariable();
 		CompositePrecondition p = new CompositePrecondition(
@@ -190,12 +193,39 @@ public class Node implements INode
 				VariableValuePrecondition.createLE(input, '9'));
 		return addInputClassSequence(p, min, max, storage);
 	}
+	
+    /**
+     * Create node or nodes to capture numbers as a character array.
+     * 
+     * @param size the amount of characters to read.
+     * @param storage character array to store the result.
+     * @return the node that is entered on reading the last number
+     */
+	public Node addNumbers(final int size, final Variable storage)
+	{
+	    return addNumbers(size, size, storage);
+	}
 
-	/** Add numbers but do not store the result */
-	public Node addNumbers(int min, int max) throws Exception
+	/** 
+	 * Add numbers but do not store the result.
+	 * @param min minimum amount to read.
+	 * @param max maximum amount to read.
+	 * @return the Node that the numbers node feeds into, to which new Transitions can be appended.
+	 */
+	public Node addNumbers(final int min, final int max)
 	{
 		return addNumbers(min,max,null);
 	}
+	
+   /**
+     * Create a node or nodes to skip over numbers.
+     * @param size amount of numbers to skip.
+     * @return the output Node to which new Transitions may be appended.
+     */
+    public Node addNumbers(final int size)
+    {
+        return addNumbers(size, size, null);
+    }
 	
 	/**
 	 * Create node or nodes to capture based on the given condition
@@ -324,17 +354,6 @@ public class Node implements INode
 		return storeCommand;
 	}
 	
-	/**
-	 * Create a node or nodes to skip over numbers
-	 * @return
-	 * @throws Exception 
-	 */
-	public Node addNumbers(int i) throws Exception
-	{
-		return addNumbers(i,i,null);
-	}
-
-
 	/**
 	 * Add transitions out of this node.
 	 */

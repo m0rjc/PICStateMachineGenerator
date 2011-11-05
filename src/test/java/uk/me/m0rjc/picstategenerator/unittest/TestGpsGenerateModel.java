@@ -41,7 +41,6 @@ public class TestGpsGenerateModel
 		m_model = GenerateGpsStateModel.buildmodel();
 		m_model.optimiseModel();
 		SimulatorBuilder builder = new SimulatorBuilder();
-		builder.registerSpecialFunctionRegister(GenerateGpsStateModel.SFR_EUSART_RECEIVE);
 		m_model.accept(builder);
 		m_simulation = builder.getSimulation();
 		m_simulation.setInputVariable(GenerateGpsStateModel.VARIABLE_INPUT);

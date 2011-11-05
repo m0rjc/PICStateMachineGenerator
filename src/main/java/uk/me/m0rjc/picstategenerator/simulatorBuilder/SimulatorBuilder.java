@@ -36,16 +36,25 @@ public class SimulatorBuilder implements IModelVisitor
 	}
 	
 	@Override
-	public void visitStartModel(IModel model)
+	public void visitStartModel(final IModel model)
 	{
+	    for(Variable variable : model.getVariables())
+	    {
+	        if(variable.isImplicitlyImported())
+	        {
+	            createSimulatedVariable(variable);
+	        }
+	    }
 	}
 
 	/**
 	 * Declare an external symbol
 	 * @param name
 	 */
+	@Override
 	public void visitDeclareExternalSymbol(Variable name)
 	{
+	    
 	}
 
 	/**
@@ -78,14 +87,24 @@ public class SimulatorBuilder implements IModelVisitor
 	@Override
 	public void visitCreateVariableDefinition(final Variable v)
 	{
-		m_currentVariable = new SimulatedVariable(v.getName(), v.getSize());
-		m_simulation.addVariable(m_currentVariable);
+		m_currentVariable = createSimulatedVariable(v);
+	}
+
+	/**
+	 * Create a simulated variable based on the given template.
+	 * @param v
+	 */
+    private SimulatedVariable createSimulatedVariable(final Variable v)
+    {
+        SimulatedVariable variable = new SimulatedVariable(v.getName(), v.getSize());
+		m_simulation.addVariable(variable);
 		String[] flags = v.getFlagNames();
 		for(int i = 0; i < flags.length; i++)
 		{
-		    m_currentVariable.registerBit(flags[i], i);
+		    variable.registerBit(flags[i], i);
 		}
-	}
+		return variable;
+    }
 
 	
 	/**

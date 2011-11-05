@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<StateGeneratorRun xmlns="http://net.raynet-uk.m0rjc.picprojects/stategenerator">
+<StateGeneratorRun xmlns="http://uk.me.m0rjc/picstategenerator">
 	<Model name="gps" root="root" inputVariable="gpsInput">
 		<Symbols>
 			<Symbol name="gpsInput" loc="accessram" decl="global" />
 			<Symbol name="gpsFlags" loc="accessram" decl="global">
 				<Flags>
-					<Flag>FLAG_GPS_NEW_POSITION</Flag>
-					<Flag>FLAG_GPS_NORTH</Flag>
-					<Flag>FLAG_GPS_EAST</Flag>
+					<Flag>NEW_POSITION</Flag>
+					<Flag>NORTH</Flag>
+					<Flag>EAST</Flag>
+					<!-- Command to the test code to send information back to the host. -->
+					<Flag>TEST_PLEASE_SEND</Flag>
+					<Flag>Test4</Flag>
+					<Flag>Test5</Flag>
+					<Flag>Test6</Flag>
+					<Flag>Test7</Flag>
+					<!-- Test a 2 byte flags variable -->
+					<Flag>Test8</Flag>
+					<Flag>Test9</Flag>
 				</Flags>
 			</Symbol>
 			<Symbol name="gpsTime" size="6" loc="page1" decl="global" />
@@ -16,10 +25,49 @@
 			<Symbol name="gpsLongitudeHundredths" size="2" loc="page1" decl="global" />
 			<Symbol name="gpsLatitudeDegMin" size="4" loc="page1" decl="global" />
 			<Symbol name="gpsLatitudeHundredths" size="2" loc="page1" decl="global" />
+			<Symbol name="PORTC" size="1" decl="none" loc="accessram">
+				<Flags>
+					<Flag>C0</Flag>
+					<Flag>C1</Flag>
+					<Flag>C2</Flag>
+					<Flag>C3</Flag>
+					<Flag>C4</Flag>
+					<Flag>C5</Flag>
+					<Flag>C6</Flag>
+					<Flag>C7</Flag>
+				</Flags>
+			</Symbol>
+			<!-- When TEST_PLEASE_SEND is set, this indicates the variable to send. -->
+			<Symbol name="testSendVar" size="1" loc="page1" decl="global" />
+			<!-- When TEST_PLEASE_SEND is set, this indicates the offset relative to the variable -->
+			<Symbol name="testSendIndex" size="1" loc="page1" decl="global" />
 		</Symbols>
 		<Nodes>
 			<Node name="root">
+				<EntryCommands>
+					<SetFlag flag="C0" variable="PORTC" value="false"/>
+				</EntryCommands>
 				<Transition input="'$'" target="dollar" />
+				
+				<!-- Test framework -->
+				<Script>
+					<Literal>!!</Literal>
+					<GuardCondition>
+						<FlagCheck flag="TEST_PLEASE_SEND" variable="gpsFlags" value="false"/>
+					</GuardCondition>
+					<Commands>
+						<SetFlag flag="C1" variable="PORTC" value="true"/>
+					</Commands>
+					<Literal>TEST-SEND:</Literal>
+					<Numbers max="1" min="1" store="testSendVar"/>
+					<Literal>:</Literal>
+					<Numbers max="1" min="1" store="testSendIndex"/>
+					<!--  Literal>!!</Literal -->
+					<Commands>
+						<SetFlag flag="TEST_PLEASE_SEND" variable="gpsFlags" value="true"/>
+						<SetFlag flag="C1" variable="PORTC" value="false"/>
+					</Commands>
+				</Script>
 			</Node>
 			
 			<!-- Subroutine to read a GPS 6 digit time.
@@ -49,13 +97,13 @@
 					<Choices>
 						<Choice input="'S'">
 							<Commands>
-								<SetFlag flag="FLAG_GPS_NORTH" variable="gpsFlags"
+								<SetFlag flag="NORTH" variable="gpsFlags"
 									value="false" />
 							</Commands>
 						</Choice>
 						<Choice input="'N'">
 							<Commands>
-								<SetFlag flag="FLAG_GPS_NORTH" variable="gpsFlags"
+								<SetFlag flag="NORTH" variable="gpsFlags"
 									value="true" />
 							</Commands>
 						</Choice>
@@ -71,12 +119,12 @@
 					<Choices>
 						<Choice input="'E'">
 							<Commands>
-								<SetFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="true" />
+								<SetFlag flag="EAST" variable="gpsFlags" value="true" />
 							</Commands>
 						</Choice>
 						<Choice input="'W'">
 							<Commands>
-								<SetFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="false" />
+								<SetFlag flag="EAST" variable="gpsFlags" value="false" />
 							</Commands>
 						</Choice>
 					</Choices>
@@ -85,10 +133,13 @@
 				</Script>			
 			</Node>
 			<Node name="dollar">
+				<EntryCommands>
+					<SetFlag flag="C0" variable="PORTC" value="true"/>
+				</EntryCommands>
 				<Script description="Read a GPGGA location string">
 					<Literal>GPGGA</Literal>
 					<GuardCondition>
-						<FlagCheck variable="gpsFlags" flag="FLAG_GPS_NEW_POSITION"	value="false" />
+						<FlagCheck variable="gpsFlags" flag="NEW_POSITION"	value="false" />
 					</GuardCondition>
 					<Literal>,</Literal>
 					<GoSub>readGpsTime</GoSub>
@@ -101,7 +152,7 @@
 						</Choice>
 					</Choices>
 					<Commands>
-						<SetFlag variable="gpsFlags" flag="FLAG_GPS_NEW_POSITION" value="true" />
+						<SetFlag variable="gpsFlags" flag="NEW_POSITION" value="true" />
 					</Commands>
 				</Script>
 			</Node>
@@ -114,12 +165,12 @@
 			<AssertEquals variable="gpsTime" string="060932" />
 			<AssertEquals variable="gpsLatitudeDegMin" string="2447" />
 			<AssertEquals variable="gpsLatitudeHundredths" string="09" />
-			<AssertFlag flag="FLAG_GPS_NORTH" variable="gpsFlags" value="true" />
+			<AssertFlag flag="NORTH" variable="gpsFlags" value="true" />
 			<AssertEquals variable="gpsLongitudeDegMin" string="12100" />
 			<AssertEquals variable="gpsLongitudeHundredths" string="52" />
-			<AssertFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="true" />
+			<AssertFlag flag="EAST" variable="gpsFlags" value="true" />
 			<AssertEquals variable="gpsQuality" string="1" />
-			<AssertFlag flag="FLAG_GPS_NEW_POSITION" variable="gpsFlags" value="true" />
+			<AssertFlag flag="NEW_POSITION" variable="gpsFlags" value="true" />
 		</Test>
 		<Test>
 			<Description>GPGGA with an existing unread fix does not overwrite</Description>
@@ -130,12 +181,21 @@
 			<AssertEquals variable="gpsTime" string="060932" />
 			<AssertEquals variable="gpsLatitudeDegMin" string="2447" />
 			<AssertEquals variable="gpsLatitudeHundredths" string="09" />
-			<AssertFlag flag="FLAG_GPS_NORTH" variable="gpsFlags" value="false" />
+			<AssertFlag flag="NORTH" variable="gpsFlags" value="false" />
 			<AssertEquals variable="gpsLongitudeDegMin" string="12100" />
 			<AssertEquals variable="gpsLongitudeHundredths" string="52" />
-			<AssertFlag flag="FLAG_GPS_EAST" variable="gpsFlags" value="false" />
+			<AssertFlag flag="EAST" variable="gpsFlags" value="false" />
 			<AssertEquals variable="gpsQuality" string="1" />
-			<AssertFlag flag="FLAG_GPS_NEW_POSITION" variable="gpsFlags" value="true" />
+			<AssertFlag flag="NEW_POSITION" variable="gpsFlags" value="true" />
+		</Test>
+		<Test>
+			<Description>Test framework command</Description>
+			<Input>
+			!!TEST-SEND:4:1
+  			</Input>
+			<AssertEquals variable="testSendVar" string="4" />
+			<AssertEquals variable="testSendIndex" string="1" />
+			<AssertFlag flag="TEST_PLEASE_SEND" variable="gpsFlags" value="true" />
 		</Test>
 	</UnitTests>
 	<Output>

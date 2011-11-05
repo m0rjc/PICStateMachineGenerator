@@ -7,8 +7,8 @@ import org.xml.sax.SAXNotRecognizedException;
 
 import uk.me.m0rjc.picstategenerator.model.RomLocation;
 import uk.me.m0rjc.picstategenerator.model.StateModel;
+import uk.me.m0rjc.picstategenerator.model.SymbolOwnership;
 import uk.me.m0rjc.picstategenerator.model.Variable;
-import uk.me.m0rjc.picstategenerator.model.Variable.Ownership;
 
 /**
  * Handle symbol declarations within a Model.
@@ -55,33 +55,34 @@ class SymbolSaxHandler extends ChainedSaxHandler
 	}
 
 	/**
-	 * Define a symbol based on the attributes
-	 * @param attributes
-	 * @throws SAXException 
+	 * Define a symbol based on the attributes.
+	 * @param attributes XML attributes for the Symbol element
+	 * @throws SAXException to report error.
 	 */
-	private void onSymbol(Attributes attributes) throws SAXException
+	private void onSymbol(final Attributes attributes) throws SAXException
 	{
 		String name = attributes.getValue("name");
 		int size = getInt(attributes, "size", 1);
 		String loc = attributes.getValue("loc");
 		String decl = attributes.getValue("decl");
 
+        SymbolOwnership ownership = readOwnership(decl);
+		
 		if(loc == null)
 		{
 			throw new SAXException("Symbol declaration missing 'loc' location information");
 		}
 		if("rom".equals(loc))
 		{
-			RomLocation rom = new RomLocation(name);
+			RomLocation rom = new RomLocation(name, ownership);
 			if(!"none".equals(decl))
 			{
-				m_model.registerExternalMethod(rom, "extern".equals(decl));
+				m_model.registerExternalMethod(rom);
 			}
 			return;
 		}
 
 		int page = readPage(loc);
-		Variable.Ownership ownership = readOwnership(decl);
 
 		m_variable = new Variable(name, ownership, page, size);
 		m_model.addVariable(m_variable);
@@ -93,13 +94,13 @@ class SymbolSaxHandler extends ChainedSaxHandler
 	 * @return
 	 * @throws SAXException
 	 */
-	private Ownership readOwnership(String decl) throws SAXException
+	private SymbolOwnership readOwnership(String decl) throws SAXException
 	{
-		if(null == decl) return Ownership.INTERNAL;
-		if("internal".equals(decl)) return Ownership.INTERNAL;
-		if("global".equals(decl)) return Ownership.GLOBAL;
-		if("extern".equals(decl)) return Ownership.EXTERN;
-		if("none".equals(decl)) return Ownership.NONE;
+		if(null == decl) return SymbolOwnership.INTERNAL;
+		if("internal".equals(decl)) return SymbolOwnership.INTERNAL;
+		if("global".equals(decl)) return SymbolOwnership.GLOBAL;
+		if("extern".equals(decl)) return SymbolOwnership.EXTERN;
+		if("none".equals(decl)) return SymbolOwnership.NONE;
 		throw new SAXException("Unrecognised variable ownership: decl=" + decl);
 	}
 

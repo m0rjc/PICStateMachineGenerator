@@ -3,6 +3,7 @@ package uk.me.m0rjc.picstategenerator.visitor;
 import uk.me.m0rjc.picstategenerator.model.GosubCommand;
 import uk.me.m0rjc.picstategenerator.model.Node;
 import uk.me.m0rjc.picstategenerator.model.RomLocation;
+import uk.me.m0rjc.picstategenerator.model.SymbolOwnership;
 import uk.me.m0rjc.picstategenerator.model.Transition;
 import uk.me.m0rjc.picstategenerator.model.Variable;
 
@@ -15,16 +16,23 @@ import uk.me.m0rjc.picstategenerator.model.Variable;
 public interface IModelVisitor
 {
 	/**
-	 * Start of visiting a model
-	 * @param model
+	 * Start of visiting a model.
+	 * @param model the model being visited.
 	 */
 	void visitStartModel(IModel model);
 	
 	/**
-	 * Declare an external symbol
-	 * @param name
+	 * Declare a symbol that is defined outside the generated module but must be
+	 * declared as EXTERNAL in the generated code.
+	 * @param variable a variable who's {@link SymbolOwnership} is External.
 	 */
-	void visitDeclareExternalSymbol(Variable name);
+	void visitDeclareExternalSymbol(Variable variable);
+	
+    /**
+     * Declare a symbol that is defined outside the generated module but must be
+     * declared as EXTERNAL in the generated code.
+     * @param name a RomLocation who's {@link SymbolOwnership} is External.
+     */
 	void visitDeclareExternalSymbol(RomLocation name);
 
 	/**
