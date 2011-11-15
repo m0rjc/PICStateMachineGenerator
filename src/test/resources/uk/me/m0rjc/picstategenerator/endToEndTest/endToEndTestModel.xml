@@ -62,11 +62,30 @@
 					<Numbers max="1" min="1" store="testSendVar"/>
 					<Literal>:</Literal>
 					<Numbers max="1" min="1" store="testSendIndex"/>
-					<!--  Literal>!!</Literal -->
+					<Literal>!!</Literal>
 					<Commands>
 						<SetFlag flag="TEST_PLEASE_SEND" variable="gpsFlags" value="true"/>
 						<SetFlag flag="C1" variable="PORTC" value="false"/>
 					</Commands>
+				</Script>
+				
+				<Script>
+					<Literal>!!</Literal>
+					<Literal>SET-TEST-9:</Literal>
+					<Choices>
+						<Choice input="'0'">
+							<Commands>
+								<SetFlag flag="Test9" variable="gpsFlags"
+									value="false" />
+							</Commands>
+						</Choice>
+						<Choice input="'1'">
+							<Commands>
+								<SetFlag flag="Test9" variable="gpsFlags"
+									value="true" />
+							</Commands>
+						</Choice>
+					</Choices>
 				</Script>
 			</Node>
 			
@@ -191,12 +210,29 @@
 		<Test>
 			<Description>Test framework command</Description>
 			<Input>
-			!!TEST-SEND:4:1
+			XXXX!!TEST-SEND:4:1!!
   			</Input>
 			<AssertEquals variable="testSendVar" string="4" />
 			<AssertEquals variable="testSendIndex" string="1" />
 			<AssertFlag flag="TEST_PLEASE_SEND" variable="gpsFlags" value="true" />
 		</Test>
+		<Test>
+			<Description>Test framework test flag9 command</Description>
+			<Input>
+			XXXX!!SET-TEST-9:1
+  			</Input>
+			<AssertFlag flag="Test9" variable="gpsFlags" value="true" />
+			<Input>
+			XXXX!!SET-TEST-9:0
+  			</Input>
+			<AssertFlag flag="Test9" variable="gpsFlags" value="false" />
+			<Input>
+			XXXX!!SET-TEST-9:1
+  			</Input>
+			<AssertFlag flag="Test9" variable="gpsFlags" value="true" />
+		</Test>
+		
+		
 	</UnitTests>
 	<Output>
 		<Pic18 processor="18F14K50">
